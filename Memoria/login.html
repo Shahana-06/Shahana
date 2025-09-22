@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login | Memoria</title>
+  <!-- Load Supabase BEFORE app.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       margin: 0;
@@ -85,6 +87,18 @@
       margin-top: 0.5rem;
       display: none;
     }
+    .quick-demo-btn {
+      margin-top: 10px; 
+      width: auto; 
+      padding: 8px 16px; 
+      font-size: 0.9rem;
+      background: #ffd700;
+      color: #333;
+    }
+    .quick-demo-btn:hover {
+      background: #ffed4e;
+      transform: translateY(-1px);
+    }
   </style>
 </head>
 <body>
@@ -101,91 +115,14 @@
     
     <div class="demo-login">
       <strong>🧪 Demo Mode</strong><br>
-      <small>Use any email/password combination to login!</small><br>
-      <button onclick="quickLogin()" style="margin-top: 10px; width: auto; padding: 8px 16px; font-size: 0.9rem;">Quick Demo Login</button>
+      <small>Try Supabase login or use any email/password for demo!</small><br>
+      <button class="quick-demo-btn" onclick="quickLogin()">Quick Demo Login</button>
     </div>
     
     <p>No account? <a href="register.html">Register</a></p>
   </div>
 
+  <!-- Load app.js AFTER Supabase -->
   <script src="app.js"></script>
-  <script>
-    const loginForm = document.getElementById('loginForm');
-    const loginBtn = document.getElementById('loginBtn');
-    const errorMsg = document.getElementById('errorMsg');
-    const successMsg = document.getElementById('successMsg');
-
-    function showError(message) {
-      errorMsg.textContent = message;
-      errorMsg.style.display = 'block';
-      successMsg.style.display = 'none';
-    }
-
-    function showSuccess(message) {
-      successMsg.textContent = message;
-      successMsg.style.display = 'block';
-      errorMsg.style.display = 'none';
-    }
-
-    function hideMessages() {
-      errorMsg.style.display = 'none';
-      successMsg.style.display = 'none';
-    }
-
-    loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
-      
-      if (!email || !password) {
-        showError('Please fill in all fields');
-        return;
-      }
-
-      if (!email.includes('@')) {
-        showError('Please enter a valid email address');
-        return;
-      }
-
-      loginBtn.disabled = true;
-      loginBtn.textContent = 'Logging in...';
-      hideMessages();
-
-      try {
-        // Simulate login process
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // In demo mode, any email/password works
-        showSuccess('Login successful! Redirecting...');
-        
-        // Store demo user data
-        localStorage.setItem('demoUser', JSON.stringify({
-          id: 'demo-user-' + Date.now(),
-          email: email,
-          name: email.split('@')[0]
-        }));
-        
-        setTimeout(() => {
-          window.location.href = 'home.html';
-        }, 1000);
-        
-      } catch (error) {
-        showError('Login failed. Please try again.');
-        console.error('Login error:', error);
-      } finally {
-        loginBtn.disabled = false;
-        loginBtn.textContent = 'Login';
-      }
-    });
-
-    // Quick demo login function
-    function quickLogin() {
-      document.getElementById('email').value = 'demo@memoria.com';
-      document.getElementById('password').value = 'demo123';
-      loginForm.dispatchEvent(new Event('submit'));
-    }
-
-  </script>
 </body>
 </html>
