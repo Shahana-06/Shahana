@@ -31,12 +31,15 @@
     button:hover { transform: scale(1.05); background: #b51e31; }
   </style>
 </head>
-<body>
+<body onload="initializeHomePage()">
   <h1>✨ Memoria ✨</h1>
-  <p>What would you like to do today?</p>
+  <p id="welcomeMsg">Loading your details...</p>
+
   <button onclick="window.location.href='post-memory.html'">✍️ Post a Memory</button>
   <button onclick="window.location.href='see-memories.html'">👀 See Memories</button>
   <button onclick="window.location.href='profile.html'">🙍 View Profile</button>
-  <button>🚪 Logout</button>
+  <button class="logout-btn">🚪 Logout</button>
+
+  <script src="app.js"></script>
 </body>
 </html>
