@@ -6,6 +6,8 @@
   <title>Post Memory in AR</title>
   <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
   <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <!-- CRITICAL: Load Supabase before app.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body, html { 
       margin: 0; 
@@ -86,6 +88,12 @@
       transform: translateY(-2px);
     }
     
+    .btn-primary:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
     .btn-secondary {
       background: #ccc;
       color: #333;
@@ -150,6 +158,20 @@
       70% { transform: translate(-50%, -50%) scale(1.1); }
       100% { transform: translate(-50%, -50%) scale(1); }
     }
+    
+    .loading {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 20px 30px;
+      border-radius: 15px;
+      z-index: 1000;
+      text-align: center;
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -170,6 +192,12 @@
     <small>Fill out the form below</small>
   </div>
   
+  <!-- Loading indicator -->
+  <div class="loading" id="loading">
+    Saving your memory...<br>
+    <small>Please wait</small>
+  </div>
+  
   <!-- Memory input form -->
   <div class="memory-form" id="memoryForm">
     <h3 style="margin-top: 0;">✍️ Create Your Memory</h3>
@@ -184,7 +212,7 @@
       <option value="private">🔒 Private - Only you can see</option>
     </select>
     <div class="form-buttons">
-      <button class="btn btn-primary" onclick="saveMemory()">💾 Save Memory</button>
+      <button class="btn btn-primary" id="saveBtn" onclick="saveMemoryHandler()">💾 Save Memory</button>
       <button class="btn btn-secondary" onclick="cancelPlacement()">❌ Cancel</button>
     </div>
   </div>
@@ -200,6 +228,7 @@
     z-index: -1;
   "></video>
 
+  <!-- Load app.js AFTER Supabase -->
   <script src="app.js"></script>
   <script>
     let isMemoryPlaced = false;
@@ -273,10 +302,13 @@
       }, 2000);
     }
 
-    async function saveMemory() {
+    // FIXED: Proper save memory handler
+    async function saveMemoryHandler() {
       const text = document.getElementById('memoryText').value.trim();
       const isAnonymous = document.getElementById('isAnonymous').checked;
       const visibility = document.getElementById('visibility').value;
+      const saveBtn = document.getElementById('saveBtn');
+      const loading = document.getElementById('loading');
       
       if (!text) {
         alert('Please write something for your memory!');
@@ -288,9 +320,17 @@
         return;
       }
       
+      // Disable button and show loading
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+      loading.style.display = 'block';
+      
       try {
+        console.log('🎯 Starting memory save process...');
+        
         // Get current location
         const location = await getCurrentLocation();
+        console.log('📍 Got location:', location);
         
         const memoryData = {
           text: text,
@@ -305,21 +345,31 @@
           is_anonymous: isAnonymous
         };
         
-        // Save to database (mock for now)
-        console.log('💾 Saving memory:', memoryData);
+        console.log('💾 Calling saveMemory function with data:', memoryData);
         
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Save to database using the global function
+        const result = await saveMemory(memoryData);
         
-        // Success feedback
-        alert('🎉 Memory saved successfully!\nYou can now discover it in AR view.');
+        console.log('📊 Save result:', result);
         
-        // Redirect back home
-        window.location.href = 'home.html';
+        if (result.success) {
+          // Success feedback
+          alert('🎉 Memory saved successfully!\nYou can now discover it in AR view.');
+          
+          // Redirect back home
+          window.location.href = 'home.html';
+        } else {
+          throw new Error(result.error || 'Failed to save memory');
+        }
         
       } catch (error) {
         console.error('❌ Save error:', error);
-        alert('Failed to save memory. Please try again.');
+        alert('Failed to save memory: ' + error.message + '\nPlease try again.');
+      } finally {
+        // Re-enable button and hide loading
+        saveBtn.disabled = false;
+        saveBtn.textContent = '💾 Save Memory';
+        loading.style.display = 'none';
       }
     }
 
@@ -347,8 +397,18 @@
     });
 
     // Initialize when page loads
-    window.addEventListener('load', () => {
+    window.addEventListener('load', async () => {
       console.log('🚀 Initializing AR memory placement...');
+      
+      // Check authentication first
+      const user = await checkAuthState();
+      if (!user) {
+        alert('Please log in first');
+        window.location.href = 'login.html';
+        return;
+      }
+      
+      console.log('✅ User authenticated, starting camera...');
       initCamera();
     });
   </script>
