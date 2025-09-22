@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -53,10 +53,17 @@
       font-size: 1.1rem;
       cursor: pointer;
       transition: 0.3s;
+      margin-top: 10px;
     }
     button:hover {
       transform: scale(1.05);
       background: #e91e63;
+    }
+    .back-btn {
+      background: #555;
+    }
+    .back-btn:hover {
+      background: #333;
     }
   </style>
 </head>
@@ -65,6 +72,8 @@
     <h2>📷 Scan Your Surroundings</h2>
     <p>Point your camera and tap a spot where you want to leave your memory.</p>
     <button onclick="window.location.href='post-memory-ar.html'">Start Scanning</button>
+    <br>
+    <button class="back-btn" onclick="window.location.href='home.html'">⬅ Back to Home</button>
   </div>
 </body>
 </html>
