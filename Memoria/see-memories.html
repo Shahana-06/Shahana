@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>See Memories</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #fddb92, #d1fdff);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .choice-container {
+      background: rgba(255,255,255,0.95);
+      border-radius: 20px;
+      padding: 2rem;
+      width: 90%;
+      max-width: 500px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      position: relative;
+    }
+    .choice-container::before {
+      content: "";
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 120px;
+      height: 120px;
+      background: rgba(253,219,146,0.3);
+      border-radius: 50%;
+      z-index: -1;
+    }
+    h2 {
+      color: #ff9800;
+      margin-bottom: 1rem;
+    }
+    p {
+      color: #444;
+      margin-bottom: 2rem;
+    }
+    button {
+      display: block;
+      width: 100%;
+      margin: 0.5rem 0;
+      padding: 1rem;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      color: white;
+      transition: 0.3s;
+    }
+    .list-btn { background: #ff9800; }
+    .list-btn:hover { background: #e68900; }
+    .scan-btn { background: #4caf50; }
+    .scan-btn:hover { background: #388e3c; }
+  </style>
+</head>
+<body>
+  <div class="choice-container">
+    <h2>🔍 Explore Memories</h2>
+    <p>Do you want to list nearby memories or scan your surroundings?</p>
+    <button class="list-btn" onclick="window.location.href='see-memories-list.html'">📋 List Memories (50m radius)</button>
+    <button class="scan-btn" onclick="window.location.href='see-memories-ar.html'">📷 Scan Area in AR</button>
+  </div>
+</body>
+</html>
