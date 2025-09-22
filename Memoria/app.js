@@ -5,16 +5,23 @@
 const SUPABASE_URL = 'https://gtviszfobbkewhuydtcs.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0dmlzemZvYmJrZXdodXlkdGNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg0NTczMzUsImV4cCI6MjA3NDAzMzMzNX0.ebduH-So7XZfyh3vtF5KAsslH_qJXIfRqvgjBlVJVQo';
 
-// Initialize Supabase client
+// Initialize Supabase client (with proper check)
 let supabase = null;
 
 // Try to initialize Supabase, fallback to localStorage if not available
 try {
-  if (typeof createClient !== 'undefined') {
+  // Check if Supabase is available globally or via CDN
+  if (typeof window !== 'undefined' && window.supabase && window.supabase.createClient) {
+    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('✅ Supabase initialized');
+  } else if (typeof createClient !== 'undefined') {
     supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log('✅ Supabase initialized via createClient');
+  } else {
+    console.log('📱 Supabase not available, using localStorage fallback');
   }
 } catch (error) {
-  console.log('Supabase not available, using localStorage fallback');
+  console.log('📱 Supabase not available, using localStorage fallback:', error.message);
 }
 
 // ===== GLOBAL VARIABLES =====
@@ -22,6 +29,58 @@ let currentUser = null;
 let userLocation = null;
 let placedMarkers = [];
 let arScene = null;
+
+// Demo memories for testing
+const demoMemories = [
+  {
+    id: 'demo-memory-1',
+    text: 'I used to come here every evening during my college days. So many memories!',
+    latitude: 13.0827,
+    longitude: 80.2707,
+    ar_position_x: -1,
+    ar_position_y: 0.5,
+    ar_position_z: -3,
+    screen_x: 200,
+    screen_y: 300,
+    visibility: 'public',
+    is_anonymous: true,
+    user_id: 'other-user',
+    created_at: new Date(Date.now() - 86400000).toISOString(),
+    full_name: 'Anonymous User'
+  },
+  {
+    id: 'demo-memory-2',
+    text: 'Best picnic spot with my family last summer 💕',
+    latitude: 13.0825,
+    longitude: 80.2705,
+    ar_position_x: 1,
+    ar_position_y: 0.8,
+    ar_position_z: -2,
+    screen_x: 400,
+    screen_y: 250,
+    visibility: 'public',
+    is_anonymous: false,
+    user_id: 'other-user-2',
+    created_at: new Date(Date.now() - 172800000).toISOString(),
+    full_name: 'Demo User'
+  },
+  {
+    id: 'demo-memory-3',
+    text: 'This is where I made a life-changing decision.',
+    latitude: 13.0829,
+    longitude: 80.2709,
+    ar_position_x: 0,
+    ar_position_y: 1.2,
+    ar_position_z: -4,
+    screen_x: 300,
+    screen_y: 200,
+    visibility: 'private',
+    is_anonymous: false,
+    user_id: 'demo-user-123', // Will be updated to current user
+    created_at: new Date(Date.now() - 259200000).toISOString(),
+    full_name: 'You'
+  }
+];
 
 // ===== UTILITY FUNCTIONS =====
 
@@ -36,9 +95,16 @@ async function getCurrentLocation() {
         accuracy: 100
       };
       userLocation = demoLocation;
+      console.log('📍 Using demo location:', demoLocation);
       resolve(demoLocation);
       return;
     }
+
+    const options = {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 300000
+    };
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
@@ -47,10 +113,11 @@ async function getCurrentLocation() {
           lng: position.coords.longitude,
           accuracy: position.coords.accuracy
         };
+        console.log('📍 Got user location:', userLocation);
         resolve(userLocation);
       },
       (error) => {
-        console.log('Geolocation error, using demo location:', error);
+        console.log('📍 Geolocation error, using demo location:', error.message);
         // Fallback to demo location
         const demoLocation = {
           lat: 13.0827,
@@ -60,11 +127,7 @@ async function getCurrentLocation() {
         userLocation = demoLocation;
         resolve(demoLocation);
       },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 300000
-      }
+      options
     );
   });
 }
@@ -133,6 +196,7 @@ async function registerUser(email, password, fullName) {
         id: data.user.id,
         email: email,
         full_name: fullName,
+        name: fullName, // For compatibility
         created_at: new Date().toISOString()
       };
       
@@ -146,11 +210,13 @@ async function registerUser(email, password, fullName) {
         id: userId,
         email: email,
         full_name: fullName,
+        name: fullName, // For compatibility
         created_at: new Date().toISOString()
       };
       
       setStoredData(`user_${userId}`, userData);
       setStoredData('current_user', userData);
+      setStoredData('demoUser', userData); // For compatibility with login.html
       currentUser = userData;
       
       return { success: true, user: userData };
@@ -161,7 +227,7 @@ async function registerUser(email, password, fullName) {
   }
 }
 
-// Login user
+// Login user - Compatible with both systems
 async function loginUser(email, password) {
   try {
     if (supabase) {
@@ -172,20 +238,29 @@ async function loginUser(email, password) {
 
       if (error) throw error;
 
-      currentUser = data.user;
-      setStoredData('current_user', data.user);
-      return { success: true, user: data.user };
+      // Store for compatibility
+      const userData = {
+        ...data.user,
+        name: data.user.user_metadata?.full_name || email.split('@')[0]
+      };
+      
+      currentUser = userData;
+      setStoredData('current_user', userData);
+      setStoredData('demoUser', userData); // For compatibility
+      return { success: true, user: userData };
     } else {
       // For demo mode - accept any email/password combination
       const userData = {
         id: generateId(),
         email: email,
         full_name: email.split('@')[0],
+        name: email.split('@')[0], // For compatibility
         created_at: new Date().toISOString()
       };
       
       currentUser = userData;
       setStoredData('current_user', userData);
+      setStoredData('demoUser', userData); // For compatibility with existing login.html
       
       return { success: true, user: userData };
     }
@@ -206,7 +281,7 @@ async function logoutUser() {
     currentUser = null;
     localStorage.removeItem('current_user');
     localStorage.removeItem('demoUser'); // Remove demo user data
-    window.location.href = 'login.html';
+    localStorage.removeItem('userMemories');
     return { success: true };
   } catch (error) {
     console.error('Logout error:', error);
@@ -214,25 +289,30 @@ async function logoutUser() {
     currentUser = null;
     localStorage.removeItem('current_user');
     localStorage.removeItem('demoUser');
-    window.location.href = 'login.html';
+    localStorage.removeItem('userMemories');
     return { success: false, error: error.message };
   }
 }
 
-// Check authentication state
+// Check authentication state - Compatible with existing HTML files
 async function checkAuthState() {
   try {
     if (supabase) {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session) {
-        currentUser = session.user;
+        const userData = {
+          ...session.user,
+          name: session.user.user_metadata?.full_name || session.user.email.split('@')[0]
+        };
+        currentUser = userData;
+        setStoredData('demoUser', userData); // For compatibility
         return currentUser;
       }
     }
     
     // Check localStorage for demo user or current user
-    const storedUser = getStoredData('current_user') || getStoredData('demoUser');
+    const storedUser = getStoredData('demoUser') || getStoredData('current_user');
     if (storedUser) {
       currentUser = storedUser;
       return currentUser;
@@ -243,6 +323,11 @@ async function checkAuthState() {
     console.error('Check auth state error:', error);
     return null;
   }
+}
+
+// Handle registration (for compatibility with register.html)
+async function handleRegistration(formData) {
+  return await registerUser(formData.email, 'demo-password', formData.fullName);
 }
 
 // ===== DATABASE FUNCTIONS =====
@@ -269,62 +354,107 @@ async function saveMemory(memoryData) {
       visibility: memoryData.visibility || 'public',
       is_anonymous: memoryData.is_anonymous || false,
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
+      full_name: currentUser.name || currentUser.full_name || 'User'
     };
 
     if (supabase) {
-      const { data, error } = await supabase
-        .from('memories')
-        .insert([memoryRecord])
-        .select();
+      try {
+        const { data, error } = await supabase
+          .from('memories')
+          .insert([memoryRecord])
+          .select();
 
-      if (error) throw error;
-      
-      // Also save to localStorage as backup
-      const allMemories = getStoredData('all_memories') || [];
-      allMemories.push(memoryRecord);
-      setStoredData('all_memories', allMemories);
-      
-      return { success: true, data: data[0] };
-    } else {
-      // Fallback to localStorage
-      const allMemories = getStoredData('all_memories') || [];
-      allMemories.push(memoryRecord);
-      setStoredData('all_memories', allMemories);
-      
-      return { success: true, data: memoryRecord };
+        if (error) throw error;
+        
+        // Also save to localStorage as backup
+        const allMemories = getStoredData('all_memories') || [];
+        allMemories.push(memoryRecord);
+        setStoredData('all_memories', allMemories);
+        
+        return { success: true, data: data[0] };
+      } catch (supabaseError) {
+        console.log('Supabase save failed, using localStorage:', supabaseError);
+        // Fall through to localStorage save
+      }
     }
+    
+    // Fallback to localStorage
+    const allMemories = getStoredData('all_memories') || [];
+    allMemories.push(memoryRecord);
+    setStoredData('all_memories', allMemories);
+    
+    // Also save to userMemories for compatibility
+    const userMemories = getStoredData('userMemories') || [];
+    userMemories.push(memoryRecord);
+    setStoredData('userMemories', userMemories);
+    
+    console.log('✅ Memory saved to localStorage');
+    return { success: true, data: memoryRecord };
+    
   } catch (error) {
     console.error('Save memory error:', error);
     return { success: false, error: error.message };
   }
 }
 
-// Get memories near location
+// Get memories near location - Enhanced with demo data
 async function getMemoriesNearLocation(lat, lng, radius = 50) {
   try {
+    console.log(`🔍 Searching for memories near ${lat}, ${lng} within ${radius}m`);
+    
     let memories = [];
 
     if (supabase) {
-      const { data, error } = await supabase
-        .from('memories')
-        .select('*')
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('memories')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      memories = data || [];
+        if (!error && data) {
+          memories = data;
+          console.log('✅ Loaded from Supabase:', memories.length);
+        }
+      } catch (supabaseError) {
+        console.log('Supabase query failed, using localStorage:', supabaseError);
+      }
     }
     
     // Also get from localStorage
     const localMemories = getStoredData('all_memories') || [];
+    const userMemories = getStoredData('userMemories') || [];
     
-    // Combine and deduplicate
+    console.log('📱 Local memories:', localMemories.length);
+    console.log('👤 User memories:', userMemories.length);
+    
+    // Add demo memories with current user's location
+    const enhancedDemoMemories = demoMemories.map(memory => {
+      const memoryClone = { ...memory };
+      // Update demo locations to be near user
+      memoryClone.latitude = lat + (Math.random() - 0.5) * 0.002; // Within ~200m
+      memoryClone.longitude = lng + (Math.random() - 0.5) * 0.002;
+      
+      // Set current user as owner of private memories
+      if (memoryClone.visibility === 'private' && currentUser) {
+        memoryClone.user_id = currentUser.id;
+        memoryClone.full_name = currentUser.name || currentUser.full_name || 'You';
+      }
+      
+      return memoryClone;
+    });
+    
+    // Combine all memory sources
     const allMemories = [...memories];
-    localMemories.forEach(localMemory => {
+    
+    // Add local memories if not already present
+    [...localMemories, ...userMemories, ...enhancedDemoMemories].forEach(localMemory => {
       if (!allMemories.find(m => m.id === localMemory.id)) {
         allMemories.push(localMemory);
       }
     });
+
+    console.log('📊 Total memories before filtering:', allMemories.length);
 
     // Filter by distance and visibility
     const nearbyMemories = allMemories.filter(memory => {
@@ -332,24 +462,30 @@ async function getMemoriesNearLocation(lat, lng, radius = 50) {
       const withinRadius = distance <= radius;
       const canView = memory.visibility === 'public' || 
                      (currentUser && memory.user_id === currentUser.id);
+      
+      if (withinRadius && canView) {
+        console.log(`✅ Memory "${memory.text.substring(0, 20)}..." - Distance: ${Math.round(distance)}m`);
+      }
+      
       return withinRadius && canView;
     });
 
+    console.log(`🎯 Found ${nearbyMemories.length} nearby memories`);
     return { success: true, data: nearbyMemories };
+    
   } catch (error) {
     console.error('Get memories error:', error);
     
-    // Fallback to localStorage only
-    const localMemories = getStoredData('all_memories') || [];
-    const nearbyMemories = localMemories.filter(memory => {
-      const distance = calculateDistance(lat, lng, memory.latitude, memory.longitude);
-      const withinRadius = distance <= radius;
-      const canView = memory.visibility === 'public' || 
-                     (currentUser && memory.user_id === currentUser.id);
-      return withinRadius && canView;
-    });
+    // Emergency fallback with demo data
+    const fallbackMemories = demoMemories.map(memory => ({
+      ...memory,
+      latitude: lat + (Math.random() - 0.5) * 0.001,
+      longitude: lng + (Math.random() - 0.5) * 0.001,
+      user_id: memory.visibility === 'private' ? (currentUser?.id || 'demo-user') : memory.user_id
+    }));
     
-    return { success: true, data: nearbyMemories };
+    console.log('🚨 Using fallback memories:', fallbackMemories.length);
+    return { success: true, data: fallbackMemories };
   }
 }
 
@@ -359,23 +495,31 @@ async function getUserMemories(userId) {
     let memories = [];
 
     if (supabase) {
-      const { data, error } = await supabase
-        .from('memories')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
+      try {
+        const { data, error } = await supabase
+          .from('memories')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      memories = data || [];
+        if (!error && data) {
+          memories = data;
+        }
+      } catch (supabaseError) {
+        console.log('Supabase user memories query failed:', supabaseError);
+      }
     }
     
     // Also get from localStorage
     const localMemories = getStoredData('all_memories') || [];
     const userLocalMemories = localMemories.filter(m => m.user_id === userId);
     
+    const userMemories = getStoredData('userMemories') || [];
+    const compatibilityMemories = userMemories.filter(m => m.user_id === userId);
+    
     // Combine and deduplicate
     const allMemories = [...memories];
-    userLocalMemories.forEach(localMemory => {
+    [...userLocalMemories, ...compatibilityMemories].forEach(localMemory => {
       if (!allMemories.find(m => m.id === localMemory.id)) {
         allMemories.push(localMemory);
       }
@@ -387,9 +531,11 @@ async function getUserMemories(userId) {
     
     // Fallback to localStorage only
     const localMemories = getStoredData('all_memories') || [];
-    const userMemories = localMemories.filter(m => m.user_id === userId);
+    const userMemories = getStoredData('userMemories') || [];
+    const allLocalMemories = [...localMemories, ...userMemories];
+    const filteredMemories = allLocalMemories.filter(m => m.user_id === userId);
     
-    return { success: true, data: userMemories };
+    return { success: true, data: filteredMemories };
   }
 }
 
@@ -397,13 +543,17 @@ async function getUserMemories(userId) {
 async function deleteMemory(memoryId, userId) {
   try {
     if (supabase) {
-      const { error } = await supabase
-        .from('memories')
-        .delete()
-        .eq('id', memoryId)
-        .eq('user_id', userId);
+      try {
+        const { error } = await supabase
+          .from('memories')
+          .delete()
+          .eq('id', memoryId)
+          .eq('user_id', userId);
 
-      if (error) throw error;
+        if (error) throw error;
+      } catch (supabaseError) {
+        console.log('Supabase delete failed:', supabaseError);
+      }
     }
     
     // Also remove from localStorage
@@ -412,19 +562,18 @@ async function deleteMemory(memoryId, userId) {
       !(m.id === memoryId && m.user_id === userId)
     );
     setStoredData('all_memories', filteredMemories);
+    
+    // Also remove from userMemories
+    const userMemories = getStoredData('userMemories') || [];
+    const filteredUserMemories = userMemories.filter(m => 
+      !(m.id === memoryId && m.user_id === userId)
+    );
+    setStoredData('userMemories', filteredUserMemories);
 
     return { success: true };
   } catch (error) {
     console.error('Delete memory error:', error);
-    
-    // Try localStorage only
-    const allMemories = getStoredData('all_memories') || [];
-    const filteredMemories = allMemories.filter(m => 
-      !(m.id === memoryId && m.user_id === userId)
-    );
-    setStoredData('all_memories', filteredMemories);
-    
-    return { success: true };
+    return { success: false, error: error.message };
   }
 }
 
@@ -432,14 +581,14 @@ async function deleteMemory(memoryId, userId) {
 
 // Initialize AR scene for posting memories
 function initializePostMemoryAR() {
-  console.log('Initializing Post Memory AR...');
+  console.log('🚀 Initializing Post Memory AR...');
   // AR functionality remains the same but now saves properly
 }
 
 // Save AR memory with position data
 async function saveArMemory(memoryData, position) {
   try {
-    console.log('Saving AR memory...', memoryData, position);
+    console.log('💾 Saving AR memory...', memoryData, position);
     
     // Get current location
     const location = await getCurrentLocation();
@@ -448,31 +597,29 @@ async function saveArMemory(memoryData, position) {
       text: memoryData.text,
       latitude: location.lat,
       longitude: location.lng,
-      ar_position_x: position.x,
-      ar_position_y: position.y,
-      ar_position_z: position.z,
+      ar_position_x: position?.x || null,
+      ar_position_y: position?.y || null,
+      ar_position_z: position?.z || null,
       screen_x: memoryData.screenX || null,
       screen_y: memoryData.screenY || null,
       visibility: memoryData.visibility,
       is_anonymous: memoryData.isAnonymous
     };
 
-    console.log('Full memory data:', fullMemoryData);
+    console.log('📝 Full memory data:', fullMemoryData);
 
     const result = await saveMemory(fullMemoryData);
-    console.log('Save result:', result);
+    console.log('💾 Save result:', result);
     
     if (result.success) {
-      alert('Memory saved successfully!');
-      setTimeout(() => {
-        window.location.href = 'home.html';
-      }, 1000);
+      console.log('✅ Memory saved successfully!');
+      return result;
     } else {
       throw new Error(result.error);
     }
   } catch (error) {
-    console.error('Save AR memory error:', error);
-    alert('Failed to save memory: ' + error.message);
+    console.error('❌ Save AR memory error:', error);
+    throw error;
   }
 }
 
@@ -480,15 +627,17 @@ async function saveArMemory(memoryData, position) {
 
 // Initialize register page
 function initializeRegisterPage() {
-  const form = document.querySelector('form');
+  const form = document.querySelector('#registerForm');
   if (!form) return;
+
+  console.log('🔧 Initializing register page');
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const fullName = form.querySelector('input[type="text"]').value.trim();
-    const email = form.querySelector('input[type="email"]').value.trim();
-    const password = form.querySelector('input[type="password"]').value;
+    const fullName = form.querySelector('#fullName').value.trim();
+    const email = form.querySelector('#email').value.trim();
+    const password = form.querySelector('#password').value;
     
     if (!fullName || !email || !password) {
       alert('Please fill in all fields');
@@ -506,7 +655,7 @@ function initializeRegisterPage() {
     }
 
     // Disable submit button during processing
-    const submitBtn = form.querySelector('button[type="submit"]');
+    const submitBtn = form.querySelector('#registerBtn');
     const originalText = submitBtn.textContent;
     submitBtn.disabled = true;
     submitBtn.textContent = 'Creating Account...';
@@ -537,14 +686,21 @@ async function initializeHomePage() {
     return;
   }
 
-  console.log('Current user on home page:', user);
+  console.log('🏠 Current user on home page:', user.email);
+
+  // Update welcome message if it exists
+  const welcomeMsg = document.getElementById('welcomeMsg');
+  if (welcomeMsg) {
+    welcomeMsg.textContent = `Welcome back, ${user.name || user.full_name || user.email.split('@')[0]}! What would you like to do today?`;
+  }
 
   // Add logout functionality to logout button
-  const logoutBtn = document.querySelector('button:last-child');
+  const logoutBtn = document.querySelector('.logout-btn');
   if (logoutBtn && !logoutBtn.onclick) {
-    logoutBtn.onclick = () => {
+    logoutBtn.onclick = async () => {
       if (confirm('Are you sure you want to logout?')) {
-        logoutUser();
+        await logoutUser();
+        window.location.href = 'login.html';
       }
     };
   }
@@ -558,7 +714,7 @@ async function initializeProfilePage() {
     return;
   }
 
-  console.log('Current user on profile page:', user);
+  console.log('👤 Current user on profile page:', user.email);
 
   // Display user info
   const emailSpan = document.getElementById('userEmail');
@@ -569,6 +725,18 @@ async function initializeProfilePage() {
 
   // Load user memories
   await loadUserMemories();
+  
+  // Add logout functionality
+  const logoutBtn = document.querySelector('button[onclick="logout()"]');
+  if (logoutBtn) {
+    logoutBtn.onclick = async (e) => {
+      e.preventDefault();
+      if (confirm('Are you sure you want to logout?')) {
+        await logoutUser();
+        window.location.href = 'login.html';
+      }
+    };
+  }
 }
 
 // Load user memories for profile page
@@ -653,14 +821,16 @@ async function initializeMemoriesListPage() {
     return;
   }
 
+  console.log('📋 Initializing memories list page');
+
   try {
     // Get current location
     const location = await getCurrentLocation();
-    console.log('Current location:', location);
+    console.log('📍 Current location for memories list:', location);
     
     // Load nearby memories
     const result = await getMemoriesNearLocation(location.lat, location.lng, 50);
-    console.log('Nearby memories result:', result);
+    console.log('🔍 Nearby memories result:', result);
     
     if (result.success) {
       displayMemoriesList(result.data);
@@ -724,51 +894,80 @@ function displayMemoriesList(memories) {
 window.deleteUserMemory = deleteUserMemory;
 window.logoutUser = logoutUser;
 window.saveArMemory = saveArMemory;
+window.checkAuthState = checkAuthState;
+window.getCurrentLocation = getCurrentLocation;
+window.getMemoriesNearLocation = getMemoriesNearLocation;
+window.calculateDistance = calculateDistance;
+window.handleRegistration = handleRegistration;
+window.saveMemory = saveMemory;
+
+// For backward compatibility with your HTML files
+window.logout = async function() {
+  await logoutUser();
+  window.location.href = 'login.html';
+};
 
 // ===== AUTO-INITIALIZATION =====
 
 // Determine which page we're on and initialize accordingly
 document.addEventListener('DOMContentLoaded', async () => {
-  console.log('DOM Content Loaded');
+  console.log('🚀 DOM Content Loaded - Memoria App Starting');
   
   const path = window.location.pathname;
   const filename = path.split('/').pop() || 'index.html';
   
-  console.log('Current page:', filename);
+  console.log('📱 Current page:', filename);
 
   // Initialize auth state first
   await checkAuthState();
-  console.log('Auth state checked, current user:', currentUser);
+  console.log('🔐 Auth state checked, current user:', currentUser?.email || 'None');
 
   // Page-specific initialization
   switch (filename) {
     case 'register.html':
-      console.log('Initializing register page');
+      console.log('🔧 Initializing register page');
       initializeRegisterPage();
       break;
     case 'home.html':
-      console.log('Initializing home page');
+      console.log('🏠 Initializing home page');
       await initializeHomePage();
       break;
     case 'profile.html':
-      console.log('Initializing profile page');
+      console.log('👤 Initializing profile page');
       await initializeProfilePage();
       break;
     case 'post-memory-ar.html':
-      console.log('Initializing post memory AR page');
+      console.log('📱 Initializing post memory AR page');
       await getCurrentLocation(); // Get location first
       initializePostMemoryAR();
       break;
     case 'see-memories-list.html':
-      console.log('Initializing memories list page');
+      console.log('📋 Initializing memories list page');
       await initializeMemoriesListPage();
       break;
+    case 'see-memories-ar.html':
+      console.log('🔍 AR memories page detected - functions ready');
+      // Don't auto-initialize here, let the AR page handle it
+      break;
     default:
-      console.log('Default case for page:', filename);
+      console.log('📄 Default case for page:', filename);
       // For index.html or any other page, don't force redirect
       break;
   }
 });
+
+// Additional initialization for window load (fallback)
+window.addEventListener('load', async () => {
+  console.log('🌐 Window loaded');
+  
+  // Ensure auth state is set for global access
+  if (!currentUser) {
+    await checkAuthState();
+  }
+});
+
+// Debug logging
+console.log('✅ App.js loaded successfully - All functions ready');
 
 // ===== EXPORT FOR TESTING (if needed) =====
 if (typeof module !== 'undefined' && module.exports) {
@@ -781,6 +980,8 @@ if (typeof module !== 'undefined' && module.exports) {
     saveMemory,
     getMemoriesNearLocation,
     getUserMemories,
-    deleteMemory
+    deleteMemory,
+    checkAuthState,
+    handleRegistration
   };
 }
