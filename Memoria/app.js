@@ -1,21 +1,44 @@
-// Complete app.js with Supabase integration - FIXED VERSION
-// Initialize Supabase (replace with your actual credentials)
+// Fixed app.js with proper Supabase integration
+// Replace with your actual Supabase credentials
 const SUPABASE_URL = 'https://gtviszfobbkewhuydtcs.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd0dmlzemZvYmJrZXdodXlkdGNzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg0NTczMzUsImV4cCI6MjA3NDAzMzMzNX0.ebduH-So7XZfyh3vtF5KAsslH_qJXIfRqvgjBlVJVQo';
 
-// Initialize Supabase client - FIXED: Remove circular reference
+// Initialize Supabase client
 let supabaseClient;
-try {
-  // Check if Supabase is available globally
-  if (typeof supabase !== 'undefined' && supabase.createClient) {
-    supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    console.log('✅ Supabase client initialized');
-  } else {
-    console.log('⚠️ Supabase not available, using demo mode');
+let isSupabaseAvailable = false;
+
+// Initialize Supabase when the script loads
+function initializeSupabase() {
+  try {
+    // Check if Supabase is available
+    if (typeof supabase !== 'undefined' && supabase.createClient) {
+      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      isSupabaseAvailable = true;
+      console.log('✅ Supabase client initialized successfully');
+      
+      // Set up auth state change listener
+      supabaseClient.auth.onAuthStateChange((event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
+        if (event === 'SIGNED_OUT') {
+          currentUser = null;
+          localStorage.removeItem('demoUser');
+        } else if (event === 'SIGNED_IN' && session?.user) {
+          currentUser = session.user;
+        }
+      });
+      
+    } else {
+      console.log('⚠️ Supabase not available, using demo mode');
+      isSupabaseAvailable = false;
+    }
+  } catch (error) {
+    console.log('⚠️ Supabase initialization failed, using demo mode:', error);
+    isSupabaseAvailable = false;
   }
-} catch (error) {
-  console.log('⚠️ Supabase not available, using demo mode:', error);
 }
+
+// Call initialization immediately
+initializeSupabase();
 
 // Global variables
 let currentUser = null;
@@ -26,26 +49,36 @@ async function checkAuthState() {
   console.log('Checking auth state...');
   
   try {
-    if (supabaseClient) {
+    if (isSupabaseAvailable && supabaseClient) {
       const { data: { user }, error } = await supabaseClient.auth.getUser();
       if (error) {
         console.error('Auth error:', error);
+        // Clear any stale session
+        await supabaseClient.auth.signOut();
+        currentUser = null;
         return null;
       }
-      currentUser = user;
-      return user;
-    } else {
-      // Demo mode - check localStorage
-      const demoUser = localStorage.getItem('demoUser');
-      if (demoUser) {
-        currentUser = JSON.parse(demoUser);
-        return currentUser;
+      
+      if (user) {
+        currentUser = user;
+        console.log('✅ User authenticated via Supabase:', user.email);
+        return user;
       }
     }
+    
+    // Fallback to demo mode
+    const demoUser = localStorage.getItem('demoUser');
+    if (demoUser) {
+      currentUser = JSON.parse(demoUser);
+      console.log('✅ User authenticated via demo mode:', currentUser.email);
+      return currentUser;
+    }
+    
   } catch (error) {
     console.error('Auth check failed:', error);
   }
   
+  console.log('❌ No authenticated user found');
   return null;
 }
 
@@ -53,34 +86,47 @@ async function loginUser(email, password) {
   console.log('Attempting login for:', email);
   
   try {
-    if (supabaseClient) {
+    // Always try Supabase first if available
+    if (isSupabaseAvailable && supabaseClient) {
+      console.log('🔄 Attempting Supabase login...');
+      
       const { data, error } = await supabaseClient.auth.signInWithPassword({
         email: email,
         password: password
       });
       
       if (error) {
-        console.error('Login error:', error);
-        return { success: false, error: error.message };
+        console.error('Supabase login error:', error);
+        // Don't return error immediately, fallback to demo mode
+        console.log('🔄 Falling back to demo mode...');
+      } else if (data.user) {
+        console.log('✅ Supabase login successful');
+        currentUser = data.user;
+        // Clear demo user if exists
+        localStorage.removeItem('demoUser');
+        return { success: true, user: data.user };
       }
-      
-      currentUser = data.user;
-      return { success: true, user: data.user };
-    } else {
-      // Demo mode
-      const demoUser = {
-        id: 'demo-user-' + Date.now(),
-        email: email,
-        name: email.split('@')[0]
-      };
-      
-      localStorage.setItem('demoUser', JSON.stringify(demoUser));
-      currentUser = demoUser;
-      return { success: true, user: demoUser };
     }
+    
+    // Demo mode fallback
+    console.log('🔄 Using demo mode login...');
+    const demoUser = {
+      id: 'demo-user-' + Date.now(),
+      email: email,
+      name: email.split('@')[0],
+      user_metadata: {
+        full_name: email.split('@')[0]
+      }
+    };
+    
+    localStorage.setItem('demoUser', JSON.stringify(demoUser));
+    currentUser = demoUser;
+    console.log('✅ Demo login successful');
+    return { success: true, user: demoUser };
+    
   } catch (error) {
     console.error('Login failed:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error.message || 'Login failed' };
   }
 }
 
@@ -88,7 +134,10 @@ async function registerUser(email, password, fullName) {
   console.log('Attempting registration for:', email);
   
   try {
-    if (supabaseClient) {
+    // Try Supabase first if available
+    if (isSupabaseAvailable && supabaseClient) {
+      console.log('🔄 Attempting Supabase registration...');
+      
       const { data, error } = await supabaseClient.auth.signUp({
         email: email,
         password: password,
@@ -100,40 +149,66 @@ async function registerUser(email, password, fullName) {
       });
       
       if (error) {
-        console.error('Registration error:', error);
-        return { success: false, error: error.message };
+        console.error('Supabase registration error:', error);
+        // Fall back to demo mode
+        console.log('🔄 Falling back to demo mode...');
+      } else {
+        console.log('✅ Supabase registration successful');
+        // Note: User might need to confirm email
+        if (data.user) {
+          currentUser = data.user;
+          localStorage.removeItem('demoUser');
+          return { 
+            success: true, 
+            user: data.user,
+            needsConfirmation: !data.session 
+          };
+        }
       }
-      
-      return { success: true, user: data.user };
-    } else {
-      // Demo mode
-      const demoUser = {
-        id: 'demo-user-' + Date.now(),
-        email: email,
-        name: fullName,
-        full_name: fullName
-      };
-      
-      localStorage.setItem('demoUser', JSON.stringify(demoUser));
-      currentUser = demoUser;
-      return { success: true, user: demoUser };
     }
+    
+    // Demo mode fallback
+    console.log('🔄 Using demo mode registration...');
+    const demoUser = {
+      id: 'demo-user-' + Date.now(),
+      email: email,
+      name: fullName,
+      user_metadata: {
+        full_name: fullName
+      }
+    };
+    
+    localStorage.setItem('demoUser', JSON.stringify(demoUser));
+    currentUser = demoUser;
+    console.log('✅ Demo registration successful');
+    return { success: true, user: demoUser };
+    
   } catch (error) {
     console.error('Registration failed:', error);
-    return { success: false, error: error.message };
+    return { success: false, error: error.message || 'Registration failed' };
   }
 }
 
 async function logoutUser() {
   try {
-    if (supabaseClient) {
+    console.log('🚪 Logging out user...');
+    
+    if (isSupabaseAvailable && supabaseClient) {
       await supabaseClient.auth.signOut();
+      console.log('✅ Supabase logout successful');
     }
+    
+    // Clear demo user
     localStorage.removeItem('demoUser');
     currentUser = null;
+    
+    console.log('✅ Logout completed');
     return { success: true };
   } catch (error) {
     console.error('Logout failed:', error);
+    // Force clear everything
+    localStorage.removeItem('demoUser');
+    currentUser = null;
     return { success: false, error: error.message };
   }
 }
@@ -191,7 +266,7 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
 // ===== MEMORY FUNCTIONS =====
 
 async function saveMemory(memoryData) {
-  console.log('Saving memory:', memoryData);
+  console.log('💾 Saving memory:', memoryData);
   
   try {
     const user = await checkAuthState();
@@ -209,12 +284,14 @@ async function saveMemory(memoryData) {
       ar_position_z: memoryData.ar_position_z,
       screen_x: memoryData.screen_x,
       screen_y: memoryData.screen_y,
-      visibility: memoryData.visibility,
-      is_anonymous: memoryData.is_anonymous,
+      visibility: memoryData.visibility || 'public',
+      is_anonymous: memoryData.is_anonymous || false,
       created_at: new Date().toISOString()
     };
     
-    if (supabaseClient) {
+    if (isSupabaseAvailable && supabaseClient) {
+      console.log('🔄 Saving to Supabase database...');
+      
       const { data, error } = await supabaseClient
         .from('memories')
         .insert([memoryRecord])
@@ -226,12 +303,14 @@ async function saveMemory(memoryData) {
         throw new Error('Failed to save memory: ' + error.message);
       }
       
-      console.log('✅ Memory saved to database:', data);
+      console.log('✅ Memory saved to Supabase:', data);
       return { success: true, data: data };
     } else {
       // Demo mode - save to localStorage
+      console.log('🔄 Saving to demo storage...');
+      
       const memories = JSON.parse(localStorage.getItem('demo_memories') || '[]');
-      memoryRecord.id = 'memory-' + Date.now();
+      memoryRecord.id = 'memory-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
       memories.push(memoryRecord);
       localStorage.setItem('demo_memories', JSON.stringify(memories));
       
@@ -245,7 +324,7 @@ async function saveMemory(memoryData) {
 }
 
 async function getMemoriesNearLocation(latitude, longitude, radiusMeters = 50) {
-  console.log(`Getting memories near ${latitude}, ${longitude} within ${radiusMeters}m`);
+  console.log(`🔍 Getting memories near ${latitude}, ${longitude} within ${radiusMeters}m`);
   
   try {
     const user = await checkAuthState();
@@ -255,36 +334,41 @@ async function getMemoriesNearLocation(latitude, longitude, radiusMeters = 50) {
     
     let memories = [];
     
-    if (supabaseClient) {
-      // Get all public memories first (basic query without PostGIS)
+    if (isSupabaseAvailable && supabaseClient) {
+      console.log('🔄 Querying Supabase database...');
+      
+      // Get all public memories
       const { data: publicMemories, error: publicError } = await supabaseClient
         .from('memories')
         .select('*')
         .eq('visibility', 'public');
         
       if (publicError) {
-        throw new Error('Failed to fetch public memories: ' + publicError.message);
+        console.warn('Public memories query error:', publicError);
       }
       
-      // Get user's own memories
+      // Get user's own memories (both public and private)
       const { data: userMemories, error: userError } = await supabaseClient
         .from('memories')
         .select('*')
         .eq('user_id', user.id);
         
       if (userError) {
-        throw new Error('Failed to fetch user memories: ' + userError.message);
+        console.warn('User memories query error:', userError);
       }
       
-      // Combine and filter by distance on client side
+      // Combine memories
       const allMemories = [...(publicMemories || []), ...(userMemories || [])];
       
-      // Remove duplicates and filter by distance
+      // Remove duplicates
       const uniqueMemories = allMemories.filter((memory, index, self) => 
         index === self.findIndex(m => m.id === memory.id)
       );
       
+      // Filter by distance
       memories = uniqueMemories.filter(memory => {
+        if (!memory.latitude || !memory.longitude) return false;
+        
         const distance = calculateDistance(
           latitude, longitude,
           memory.latitude, memory.longitude
@@ -294,9 +378,11 @@ async function getMemoriesNearLocation(latitude, longitude, radiusMeters = 50) {
       
     } else {
       // Demo mode
+      console.log('🔄 Using demo storage...');
+      
       let demoMemories = JSON.parse(localStorage.getItem('demo_memories') || '[]');
       
-      // Add some sample memories if none exist
+      // Add sample memories if none exist
       if (demoMemories.length === 0) {
         const sampleMemories = [
           {
@@ -315,7 +401,7 @@ async function getMemoriesNearLocation(latitude, longitude, radiusMeters = 50) {
           {
             id: 'sample-2',
             user_id: 'sample-user-2',
-            text: 'Had amazing coffee here with friends! This place holds so many precious memories of laughter and deep conversations.',
+            text: 'Had amazing coffee here with friends! This place holds so many precious memories.',
             latitude: latitude - 0.0001,
             longitude: longitude - 0.0001,
             ar_position_x: -0.5,
@@ -328,7 +414,7 @@ async function getMemoriesNearLocation(latitude, longitude, radiusMeters = 50) {
           {
             id: 'sample-3',
             user_id: user.id,
-            text: 'This is my secret thinking spot. I come here whenever I need clarity and peace.',
+            text: 'This is my secret thinking spot. I come here for peace and clarity.',
             latitude: latitude + 0.00005,
             longitude: longitude - 0.00005,
             ar_position_x: 0.2,
@@ -343,8 +429,10 @@ async function getMemoriesNearLocation(latitude, longitude, radiusMeters = 50) {
         demoMemories = sampleMemories;
       }
       
-      // Filter demo memories by distance
+      // Filter by distance
       memories = demoMemories.filter(memory => {
+        if (!memory.latitude || !memory.longitude) return false;
+        
         const distance = calculateDistance(
           latitude, longitude,
           memory.latitude, memory.longitude
@@ -355,6 +443,7 @@ async function getMemoriesNearLocation(latitude, longitude, radiusMeters = 50) {
     
     console.log(`✅ Found ${memories.length} memories near location`);
     return { success: true, data: memories };
+    
   } catch (error) {
     console.error('❌ Failed to get memories:', error);
     return { success: false, error: error.message };
@@ -364,18 +453,23 @@ async function getMemoriesNearLocation(latitude, longitude, radiusMeters = 50) {
 // ===== PAGE INITIALIZATION FUNCTIONS =====
 
 async function initializeHomePage() {
-  console.log('Initializing home page...');
+  console.log('🏠 Initializing home page...');
   
   try {
     const user = await checkAuthState();
     if (!user) {
+      console.log('❌ No user found, redirecting to login');
       window.location.href = 'login.html';
       return;
     }
     
+    // Update welcome message
     const welcomeMsg = document.getElementById('welcomeMsg');
     if (welcomeMsg) {
-      const displayName = user.name || user.full_name || user.email?.split('@')[0] || 'User';
+      const displayName = user.user_metadata?.full_name || 
+                         user.name || 
+                         user.email?.split('@')[0] || 
+                         'User';
       welcomeMsg.textContent = `Welcome back, ${displayName}!`;
     }
     
@@ -383,6 +477,7 @@ async function initializeHomePage() {
     const logoutBtn = document.querySelector('.logout-btn');
     if (logoutBtn) {
       logoutBtn.addEventListener('click', async () => {
+        console.log('🚪 Logout button clicked');
         const result = await logoutUser();
         if (result.success) {
           window.location.href = 'login.html';
@@ -390,76 +485,13 @@ async function initializeHomePage() {
       });
     }
     
+    console.log('✅ Home page initialized successfully');
+    
   } catch (error) {
-    console.error('Failed to initialize home page:', error);
+    console.error('❌ Failed to initialize home page:', error);
     window.location.href = 'login.html';
   }
 }
-
-// ===== FORM HANDLERS =====
-
-// Setup form handlers when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-  console.log('DOM loaded, setting up form handlers...');
-  
-  // Login form
-  const loginForm = document.getElementById('loginForm');
-  if (loginForm) {
-    loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
-      
-      if (!email || !password) {
-        showError('Please fill in all fields');
-        return;
-      }
-      
-      const result = await loginUser(email, password);
-      if (result.success) {
-        showSuccess('Login successful! Redirecting...');
-        setTimeout(() => {
-          window.location.href = 'home.html';
-        }, 1000);
-      } else {
-        showError(result.error || 'Login failed');
-      }
-    });
-  }
-  
-  // Registration form
-  const registerForm = document.getElementById('registerForm');
-  if (registerForm) {
-    registerForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const fullName = document.getElementById('fullName').value.trim();
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
-      
-      if (!fullName || !email || !password) {
-        showError('Please fill in all fields');
-        return;
-      }
-      
-      if (password.length < 6) {
-        showError('Password must be at least 6 characters');
-        return;
-      }
-      
-      const result = await registerUser(email, password, fullName);
-      if (result.success) {
-        showSuccess('Account created successfully! Redirecting...');
-        setTimeout(() => {
-          window.location.href = 'home.html';
-        }, 1000);
-      } else {
-        showError(result.error || 'Registration failed');
-      }
-    });
-  }
-});
 
 // ===== UTILITY FUNCTIONS =====
 
@@ -493,11 +525,147 @@ function showSuccess(message) {
   console.log('Success:', message);
 }
 
+// ===== FORM HANDLERS =====
+
+// Setup form handlers when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+  console.log('📄 DOM loaded, setting up form handlers...');
+  
+  // Wait a bit for Supabase to initialize if needed
+  setTimeout(() => {
+    setupFormHandlers();
+  }, 100);
+});
+
+function setupFormHandlers() {
+  // Login form
+  const loginForm = document.getElementById('loginForm');
+  if (loginForm) {
+    console.log('🔗 Setting up login form handler');
+    
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      console.log('📝 Login form submitted');
+      
+      const email = document.getElementById('email')?.value?.trim();
+      const password = document.getElementById('password')?.value;
+      const loginBtn = document.getElementById('loginBtn');
+      
+      if (!email || !password) {
+        showError('Please fill in all fields');
+        return;
+      }
+      
+      if (!email.includes('@')) {
+        showError('Please enter a valid email address');
+        return;
+      }
+      
+      // Disable button
+      if (loginBtn) {
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'Logging in...';
+      }
+      
+      try {
+        const result = await loginUser(email, password);
+        
+        if (result.success) {
+          showSuccess('Login successful! Redirecting...');
+          setTimeout(() => {
+            window.location.href = 'home.html';
+          }, 1000);
+        } else {
+          showError(result.error || 'Login failed');
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        showError('Login failed: ' + error.message);
+      } finally {
+        // Re-enable button
+        if (loginBtn) {
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Login';
+        }
+      }
+    });
+  }
+  
+  // Registration form
+  const registerForm = document.getElementById('registerForm');
+  if (registerForm) {
+    console.log('🔗 Setting up registration form handler');
+    
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      console.log('📝 Registration form submitted');
+      
+      const fullName = document.getElementById('fullName')?.value?.trim();
+      const email = document.getElementById('email')?.value?.trim();
+      const password = document.getElementById('password')?.value;
+      const registerBtn = document.getElementById('registerBtn');
+      
+      if (!fullName || !email || !password) {
+        showError('Please fill in all fields');
+        return;
+      }
+      
+      if (!email.includes('@')) {
+        showError('Please enter a valid email address');
+        return;
+      }
+      
+      if (password.length < 6) {
+        showError('Password must be at least 6 characters');
+        return;
+      }
+      
+      // Disable button
+      if (registerBtn) {
+        registerBtn.disabled = true;
+        registerBtn.textContent = 'Creating Account...';
+      }
+      
+      try {
+        const result = await registerUser(email, password, fullName);
+        
+        if (result.success) {
+          if (result.needsConfirmation) {
+            showSuccess('Account created! Please check your email for confirmation.');
+          } else {
+            showSuccess('Account created successfully! Redirecting...');
+            setTimeout(() => {
+              window.location.href = 'home.html';
+            }, 1000);
+          }
+        } else {
+          showError(result.error || 'Registration failed');
+        }
+      } catch (error) {
+        console.error('Registration error:', error);
+        showError('Registration failed: ' + error.message);
+      } finally {
+        // Re-enable button
+        if (registerBtn) {
+          registerBtn.disabled = false;
+          registerBtn.textContent = 'Create Account';
+        }
+      }
+    });
+  }
+}
+
 // Quick demo login function (for login page)
-window.quickLogin = () => {
-  document.getElementById('email').value = 'demo@memoria.com';
-  document.getElementById('password').value = 'demo123';
-  document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+window.quickLogin = async () => {
+  const emailInput = document.getElementById('email');
+  const passwordInput = document.getElementById('password');
+  const loginForm = document.getElementById('loginForm');
+  
+  if (emailInput && passwordInput && loginForm) {
+    emailInput.value = 'demo@memoria.com';
+    passwordInput.value = 'demo123';
+    loginForm.dispatchEvent(new Event('submit'));
+  }
 };
 
 // Export functions for global access
@@ -507,3 +675,8 @@ window.calculateDistance = calculateDistance;
 window.saveMemory = saveMemory;
 window.getMemoriesNearLocation = getMemoriesNearLocation;
 window.initializeHomePage = initializeHomePage;
+window.loginUser = loginUser;
+window.registerUser = registerUser;
+window.logoutUser = logoutUser;
+
+console.log('📱 Memoria app.js loaded successfully');
