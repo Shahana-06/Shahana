@@ -186,16 +186,6 @@
       loginForm.dispatchEvent(new Event('submit'));
     }
 
-    // Check if user is already logged in
-    window.addEventListener('load', () => {
-      const demoUser = localStorage.getItem('demoUser');
-      if (demoUser) {
-        showSuccess('Already logged in! Redirecting...');
-        setTimeout(() => {
-          window.location.href = 'home.html';
-        }, 1000);
-      }
-    });
   </script>
 </body>
 </html>
