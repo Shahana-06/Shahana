@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Register | Memoria</title>
+  <!-- Load Supabase BEFORE app.js -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       margin: 0;
@@ -96,18 +98,13 @@
     
     <div class="demo-info">
       <strong>🧪 Demo Mode</strong><br>
-      <small>Registration works in demo mode! Your account will be saved locally.</small>
+      <small>Registration works with Supabase or demo mode!</small>
     </div>
     
     <p>Already have an account? <a href="login.html">Login</a></p>
   </div>
 
+  <!-- Load app.js AFTER Supabase -->
   <script src="app.js"></script>
-  <script>
-    // Additional registration handling if needed
-    document.addEventListener('DOMContentLoaded', function() {
-      console.log('Register page loaded');
-    });
-  </script>
 </body>
 </html>
