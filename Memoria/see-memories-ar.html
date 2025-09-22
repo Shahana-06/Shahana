@@ -7,31 +7,476 @@
   <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
   <style>
-    body, html { margin: 0; height: 100%; overflow: hidden; }
+    body, html { 
+      margin: 0; 
+      height: 100%; 
+      overflow: hidden; 
+      font-family: 'Poppins', sans-serif;
+    }
+    
     .header {
-      position: absolute;
+      position: fixed;
       top: 15px;
       left: 50%;
       transform: translateX(-50%);
       padding: 12px 20px;
       border-radius: 12px;
-      font-family: 'Poppins', sans-serif;
       font-size: 1rem;
       font-weight: 600;
       color: white;
       background: linear-gradient(135deg, #6a11cb, #2575fc);
       box-shadow: 0 4px 12px rgba(0,0,0,0.25);
-      z-index: 10;
+      z-index: 100;
       text-align: center;
       letter-spacing: 0.5px;
+      max-width: 90%;
+    }
+    
+    .back-btn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: rgba(255,64,129,0.9);
+      color: white;
+      border: none;
+      padding: 0.8rem 1rem;
+      border-radius: 25px;
+      cursor: pointer;
+      z-index: 100;
+      font-size: 1rem;
+    }
+    
+    .memory-count {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.7);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      z-index: 100;
+      font-size: 0.9rem;
+    }
+    
+    .loading {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      z-index: 1000;
+      text-align: center;
+    }
+    
+    .no-memories {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(255,255,255,0.9);
+      padding: 20px;
+      border-radius: 15px;
+      z-index: 1000;
+      text-align: center;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+
+    /* Camera feed styling */
+    video {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -1;
     }
   </style>
 </head>
 <body>
-  <div class="header">📍 Scan area to find memories</div>
+  <!-- Back button -->
+  <button class="back-btn" onclick="window.location.href='see-memories.html'">← Back</button>
+  
+  <!-- Header -->
+  <div class="header" id="header">Scanning for memories...</div>
+  
+  <!-- Memory count -->
+  <div class="memory-count" id="memoryCount" style="display: none;">0 memories found</div>
+  
+  <!-- Loading indicator -->
+  <div class="loading" id="loading">
+    Loading memories...<br>
+    <small>Please allow camera access</small>
+  </div>
+  
+  <!-- No memories message -->
+  <div class="no-memories" id="noMemories" style="display: none;">
+    <h3>No memories found nearby</h3>
+    <p>Be the first to leave a memory in this area!</p>
+    <button onclick="window.location.href='post-memory.html'" style="
+      background: #ff4081;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      cursor: pointer;
+      margin-top: 10px;
+    ">Create Memory</button>
+  </div>
 
-  <a-scene embedded arjs="sourceType: webcam;">
-    <a-camera></a-camera>
+  <!-- Camera feed -->
+  <video id="video" autoplay playsinline muted></video>
+
+  <!-- A-Frame Scene (hidden initially) -->
+  <a-scene 
+    id="arScene"
+    embedded 
+    arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;"
+    style="display: none;"
+  >
+    <a-camera 
+      id="camera"
+      arjs-device-orientation-controls="smoothingFactor: 0.1"
+      look-controls-enabled="false"
+      arjs-look-controls="smoothingFactor: 0.7"
+    ></a-camera>
   </a-scene>
+
+  <script src="app.js"></script>
+  <script>
+    let memories = [];
+    let arScene = null;
+    let camera = null;
+    let isInitialized = false;
+    let userLocation = null;
+
+    // Initialize the AR memory viewer
+    async function initializeArMemoryViewer() {
+      console.log('Initializing AR memory viewer...');
+      
+      try {
+        // Check authentication
+        const user = await checkAuthState();
+        if (!user) {
+          window.location.href = 'login.html';
+          return;
+        }
+        
+        // Get user location
+        userLocation = await getCurrentLocation();
+        console.log('User location:', userLocation);
+        
+        // Load nearby memories
+        const result = await getMemoriesNearLocation(
+          userLocation.lat, 
+          userLocation.lng, 
+          50
+        );
+        
+        console.log('Memories result:', result);
+        
+        if (result.success) {
+          memories = result.data;
+          console.log('Loaded memories:', memories);
+          
+          // Update UI
+          updateUI();
+          
+          // Initialize camera and AR if we have memories
+          if (memories.length > 0) {
+            await initializeCamera();
+            await initializeAR();
+          } else {
+            showNoMemories();
+          }
+        } else {
+          console.error('Failed to load memories:', result.error);
+          showNoMemories();
+        }
+        
+      } catch (error) {
+        console.error('Error initializing AR viewer:', error);
+        alert('Error loading memories: ' + error.message);
+      } finally {
+        hideLoading();
+      }
+    }
+    
+    // Initialize camera
+    async function initializeCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'environment',
+            width: { ideal: 1280 },
+            height: { ideal: 720 }
+          }
+        });
+        
+        const video = document.getElementById('video');
+        video.srcObject = stream;
+        
+        console.log('Camera initialized');
+        return true;
+      } catch (error) {
+        console.error('Camera initialization failed:', error);
+        alert('Camera access is required for AR functionality. Please allow camera access and refresh the page.');
+        return false;
+      }
+    }
+    
+    // Initialize AR scene
+    async function initializeAR() {
+      console.log('Initializing AR scene...');
+      
+      arScene = document.getElementById('arScene');
+      camera = document.getElementById('camera');
+      
+      if (!arScene || !camera) {
+        console.error('AR elements not found');
+        return;
+      }
+      
+      // Show AR scene
+      arScene.style.display = 'block';
+      
+      // Wait for scene to be ready
+      arScene.addEventListener('loaded', () => {
+        console.log('AR scene loaded, placing memories...');
+        placeMemoriesInAR();
+        isInitialized = true;
+      });
+      
+      // If scene is already loaded
+      if (arScene.hasLoaded) {
+        console.log('AR scene already loaded, placing memories...');
+        placeMemoriesInAR();
+        isInitialized = true;
+      }
+    }
+    
+    // Place memories in AR space
+    function placeMemoriesInAR() {
+      console.log('Placing memories in AR:', memories.length);
+      
+      memories.forEach((memory, index) => {
+        createMemoryEntity(memory, index);
+      });
+    }
+    
+    // Create AR entity for a memory
+    function createMemoryEntity(memory, index) {
+      console.log('Creating memory entity:', memory.id, memory.text.substring(0, 20));
+      
+      // Create main container
+      const memoryEntity = document.createElement('a-entity');
+      memoryEntity.setAttribute('id', `memory-${memory.id}`);
+      
+      // Position calculation
+      let position;
+      if (memory.ar_position_x !== null && memory.ar_position_y !== null && memory.ar_position_z !== null) {
+        // Use stored AR position
+        position = `${memory.ar_position_x} ${memory.ar_position_y} ${memory.ar_position_z}`;
+        console.log('Using stored AR position:', position);
+      } else {
+        // Calculate position based on GPS coordinates
+        const distance = calculateDistance(
+          userLocation.lat, userLocation.lng,
+          memory.latitude, memory.longitude
+        );
+        
+        // Convert to AR coordinates (simplified)
+        const angle = Math.atan2(
+          memory.longitude - userLocation.lng,
+          memory.latitude - userLocation.lat
+        );
+        
+        const arDistance = Math.min(distance / 10, 5); // Scale down distance, max 5 units
+        const x = Math.sin(angle) * arDistance;
+        const z = -Math.cos(angle) * arDistance; // Negative Z is forward
+        const y = 0.5; // Height above ground
+        
+        position = `${x} ${y} ${z}`;
+        console.log('Calculated AR position:', position, 'from distance:', distance);
+      }
+      
+      memoryEntity.setAttribute('position', position);
+      
+      // Create sphere indicator
+      const sphere = document.createElement('a-sphere');
+      const color = memory.visibility === 'private' ? '#ff6b6b' : 
+                   memory.user_id === (currentUser?.id) ? '#4ecdc4' : '#ffa726';
+      
+      sphere.setAttribute('radius', '0.1');
+      sphere.setAttribute('color', color);
+      sphere.setAttribute('opacity', '0.8');
+      sphere.setAttribute('animation', 'property: rotation; to: 0 360 0; loop: true; dur: 10000');
+      
+      // Create text label
+      const textLabel = document.createElement('a-text');
+      const displayName = memory.is_anonymous ? 'Anonymous' : 'User';
+      const shortText = memory.text.length > 30 ? 
+                       memory.text.substring(0, 30) + '...' : 
+                       memory.text;
+      
+      textLabel.setAttribute('value', `"${shortText}"\n- ${displayName}`);
+      textLabel.setAttribute('position', '0 0.2 0');
+      textLabel.setAttribute('align', 'center');
+      textLabel.setAttribute('color', '#333');
+      textLabel.setAttribute('background', 'rgba(255,255,255,0.9)');
+      textLabel.setAttribute('background-padding', '10');
+      textLabel.setAttribute('width', '4');
+      textLabel.setAttribute('wrap-count', '25');
+      
+      // Add pulsing animation
+      const pulseAnimation = document.createElement('a-animation');
+      pulseAnimation.setAttribute('attribute', 'scale');
+      pulseAnimation.setAttribute('to', '1.2 1.2 1.2');
+      pulseAnimation.setAttribute('direction', 'alternate');
+      pulseAnimation.setAttribute('repeat', 'indefinite');
+      pulseAnimation.setAttribute('dur', '2000');
+      
+      sphere.appendChild(pulseAnimation);
+      
+      // Add click interaction
+      memoryEntity.addEventListener('click', () => {
+        showMemoryDetails(memory);
+      });
+      
+      // Add cursor interaction
+      memoryEntity.setAttribute('cursor-listener', '');
+      
+      // Assemble entity
+      memoryEntity.appendChild(sphere);
+      memoryEntity.appendChild(textLabel);
+      
+      // Add to scene
+      arScene.appendChild(memoryEntity);
+      
+      console.log('Memory entity created and added to scene');
+    }
+    
+    // Show detailed memory information
+    function showMemoryDetails(memory) {
+      const displayName = memory.is_anonymous ? 'Anonymous' : 'User';
+      const isOwner = currentUser && memory.user_id === currentUser.id;
+      
+      const modal = document.createElement('div');
+      modal.id = 'memoryModal';
+      modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+      `;
+      
+      modal.innerHTML = `
+        <div style="
+          background: white;
+          padding: 2rem;
+          border-radius: 15px;
+          width: 90%;
+          max-width: 400px;
+          text-align: left;
+        ">
+          <h3 style="margin-top: 0; color: #333; text-align: center;">Memory</h3>
+          <div style="margin: 1rem 0; padding: 1rem; background: #f5f5f5; border-radius: 8px;">
+            <p style="margin: 0; font-size: 1.1rem; color: #333;">"${memory.text}"</p>
+          </div>
+          <div style="color: #666; font-size: 0.9rem; border-top: 1px solid #eee; padding-top: 1rem;">
+            <p style="margin: 0.2rem 0;"><strong>By:</strong> ${isOwner ? 'You' : displayName}</p>
+            <p style="margin: 0.2rem 0;"><strong>Visibility:</strong> ${memory.visibility}</p>
+            <p style="margin: 0.2rem 0;"><strong>Created:</strong> ${new Date(memory.created_at).toLocaleDateString()}</p>
+            ${memory.latitude && memory.longitude ? 
+              `<p style="margin: 0.2rem 0;"><strong>Location:</strong> ${memory.latitude.toFixed(4)}, ${memory.longitude.toFixed(4)}</p>` : ''
+            }
+          </div>
+          <button onclick="closeMemoryModal()" style="
+            width: 100%;
+            padding: 0.8rem;
+            background: #ff4081;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 1rem;
+            font-size: 1rem;
+          ">Close</button>
+        </div>
+      `;
+      
+      document.body.appendChild(modal);
+      
+      // Close modal function
+      window.closeMemoryModal = () => {
+        modal.remove();
+        delete window.closeMemoryModal;
+      };
+      
+      // Close on background click
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          window.closeMemoryModal();
+        }
+      });
+    }
+    
+    // Update UI elements
+    function updateUI() {
+      const header = document.getElementById('header');
+      const memoryCount = document.getElementById('memoryCount');
+      
+      if (memories.length > 0) {
+        header.textContent = `Found ${memories.length} memories nearby`;
+        memoryCount.textContent = `${memories.length} memories found`;
+        memoryCount.style.display = 'block';
+      } else {
+        header.textContent = 'No memories found in this area';
+      }
+    }
+    
+    // Show no memories message
+    function showNoMemories() {
+      document.getElementById('noMemories').style.display = 'block';
+      document.getElementById('video').style.display = 'none';
+    }
+    
+    // Hide loading indicator
+    function hideLoading() {
+      document.getElementById('loading').style.display = 'none';
+    }
+    
+    // Cleanup when leaving page
+    window.addEventListener('beforeunload', () => {
+      const video = document.getElementById('video');
+      if (video && video.srcObject) {
+        video.srcObject.getTracks().forEach(track => track.stop());
+      }
+    });
+    
+    // Initialize when page loads
+    window.addEventListener('load', () => {
+      console.log('Page loaded, initializing AR memory viewer...');
+      initializeArMemoryViewer();
+    });
+    
+    // Also try DOMContentLoaded in case window.load doesn't fire
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!isInitialized) {
+        console.log('DOM loaded, initializing AR memory viewer...');
+        setTimeout(initializeArMemoryViewer, 100);
+      }
+    });
+  </script>
 </body>
 </html>
