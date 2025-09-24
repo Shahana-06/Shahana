@@ -1,0 +1,163 @@
+dashboard.html-
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Insight Lens — Dashboard</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<style>
+body {
+  margin:0; 
+  min-height:100vh; 
+  background:linear-gradient(180deg,#050b18,#081226); 
+  color:#e6eef6; 
+  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto;
+}
+.sidebar {
+  width:240px;
+  background:#0a1227;
+  min-height:100vh;
+  padding:20px;
+}
+.sidebar h2 {
+  font-size:20px;
+  font-weight:600;
+  margin-bottom:30px;
+}
+.sidebar a, .sidebar button {
+  display:block;
+  padding:10px 12px;
+  margin-bottom:10px;
+  border-radius:8px;
+  color:#e6eef6;
+  text-decoration:none;
+  background:none;
+  border:none;
+  text-align:left;
+  cursor:pointer;
+}
+.sidebar a:hover, .sidebar button:hover { background:#16213c; }
+.sidebar .logout { background:linear-gradient(90deg,#f87171,#fbbf24); margin-top:30px; }
+.main {
+  flex:1;
+  padding:40px;
+}
+.card {
+  background:#0f172a;
+  padding:30px;
+  border-radius:12px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.3);
+}
+input {
+  background:#1e293b;
+  border:1px solid rgba(255,255,255,0.08);
+  padding:12px;
+  border-radius:8px;
+  color:#fff;
+  width:100%;
+  margin-bottom:16px;
+}
+button {
+  background:linear-gradient(90deg,#60a5fa,#5eead4);
+  color:#052039;
+  padding:12px 20px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+}
+button:hover { opacity:0.9; }
+.output-description {
+  color:#93a0b3;
+  margin-top:40px; 
+  line-height:1.7;
+}
+.output-description ul {
+  list-style:disc;
+  margin-left:20px;
+}
+.output-description h2 {
+  font-size:20px;
+  font-weight:600;
+  margin-bottom:12px;
+}
+</style>
+</head>
+<body>
+<div style="display:flex;">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>Insight Lens</h2>
+    <a href="#">Dashboard</a>
+    <button onclick="goToOverview()">Website Overview</button>
+    <button onclick="goToPerformance()">Performance</button>
+    <button onclick="goToReports()">Reports</button>
+    <button onclick="goToActivity()">Activity</button>
+    <button class="logout" onclick="logout()">Logout</button>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+    <div class="card">
+      <h1 class="text-2xl font-bold mb-2">Website Analysis Report</h1>
+      <p class="text-gray-400 mb-6">Generate a comprehensive, data-driven report by analyzing any website URL.</p>
+
+      <input type="text" id="websiteUrl" placeholder="https://example.com"/>
+      <button onclick="saveWebsite()">Generate Report</button>
+      <p id="err" class="mt-3 text-red-400"></p>
+
+      <!-- Detailed Description -->
+      <div class="output-description">
+        <h2>What You’ll Get After Generating a Report</h2>
+        <p>Insight Lens provides a detailed, actionable analysis of your website's performance, stability, and user experience. Here’s what you can expect:</p>
+        <ul>
+          <li><strong>Performance Metrics:</strong> Examine load time, First Contentful Paint (FCP), and Time to Interactive (TTI).</li>
+          <li><strong>General Recommendations:</strong> Identify weak spots like heavy scripts, unoptimized images, or server delays.</li>
+          <li><strong>Traffic Analysis:</strong> View monthly traffic patterns to plan resources effectively.</li>
+          <li><strong>Server Health Insights:</strong> Check API health status, errors, and server-side performance.</li>
+          <li><strong>AI-Powered Recommendations:</strong> Get personalized tips to improve reliability and user experience.</li>
+          <li><strong>Historical Trends:</strong> Track performance over time and detect regressions.</li>
+          <li><strong>Actionable Output:</strong> Prioritize fixes and optimize your website with clear steps.</li>
+        </ul>
+        <p>Using this report, you can improve website speed, reduce bounce rates, enhance user experience, and ensure your server remains healthy.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyA6gK_ueYde6YDbElQILh-OytSDdsNs38E",
+  authDomain: "insightlens-8898b.firebaseapp.com",
+  projectId: "insightlens-8898b",
+  appId: "1:473621063845:web:8d2f9df0efa8c6491c854c"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+// redirect if not logged in
+auth.onAuthStateChanged(user => { if(!user) location.href='login.html'; });
+
+function logout(){ auth.signOut().then(()=>location.href='login.html'); }
+
+function saveWebsite(){
+  const url = document.getElementById('websiteUrl').value.trim();
+  if(!url){ 
+    document.getElementById('err').innerText="Please enter a valid URL."; 
+    return; 
+  }
+  localStorage.setItem('currentWebsite', url);
+  alert("Website saved! Report generated for: " + url);
+}
+
+// navigation
+function goToOverview(){ location.href='overview.html'; }
+function goToPerformance(){ location.href='performance.html'; }
+function goToReports(){ location.href='reports.html'; }
+function goToActivity(){ location.href='activity.html'; }
+</script>
+</body>
+</html>
