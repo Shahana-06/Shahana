@@ -1,0 +1,73 @@
+
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Insight Lens — Register</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<style>
+body {margin:0; min-height:100vh; background:linear-gradient(180deg,#050b18,#081226); color:#e6eef6; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto; display:flex; flex-direction:column; align-items:center;}
+.container {max-width:480px; width:100%; margin-top:60px;}
+h1 {font-size:46px; text-align:center; margin-bottom:10px;}
+p.tagline {color:#93a0b3; text-align:center; margin-bottom:40px;}
+.card {background:rgba(255,255,255,0.03); border-radius:14px; padding:32px; margin-bottom:40px;}
+input {background:transparent; border:1px solid rgba(255,255,255,0.06); padding:12px; border-radius:8px; color:inherit; width:100%; margin-bottom:12px;}
+button {background:linear-gradient(90deg,#60a5fa,#5eead4); color:#052039; padding:12px 16px; border-radius:10px; border:none; cursor:pointer; font-weight:600; width:100%; margin-bottom:12px;}
+button:hover {opacity:0.9;}
+#err {color:#ffb4b4; margin-top:10px; text-align:center;}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Create Account</h1>
+  <p class="tagline">Fill in your details to start monitoring your applications.</p>
+
+  <div class="card">
+    <input id="email" type="email" placeholder="Email"/>
+    <input id="password" type="password" placeholder="Password"/>
+    <button onclick="registerAccount()">Register</button>
+    <button onclick="location.href='login.html'">Back to Login</button>
+    <p id="err"></p>
+  </div>
+
+  <p style="text-align:center; max-width:480px; color:#93a0b3;">
+    Once registered, you'll be able to analyze websites, view performance metrics, server health, and get AI-powered recommendations.
+  </p>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyA6gK_ueYde6YDbElQILh-OytSDdsNs38E",
+  authDomain: "insightlens-8898b.firebaseapp.com",
+  projectId: "insightlens-8898b",
+  appId: "1:473621063845:web:8d2f9df0efa8c6491c854c"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+function registerAccount() {
+  const e = document.getElementById('email').value.trim();
+  const p = document.getElementById('password').value.trim();
+  const errMsg = document.getElementById('err');
+
+  if(!e || !p) { errMsg.innerText = "Please fill in both email and password."; return; }
+  if(p.length<6) { errMsg.innerText = "Password must be at least 6 characters."; return; }
+
+  auth.createUserWithEmailAndPassword(e,p)
+    .then(() => {
+      alert("Account created successfully! Please login.");
+      location.href='login.html';
+    })
+    .catch(err => {
+      if(err.code === "auth/email-already-in-use") errMsg.innerText="Email is already registered.";
+      else if(err.code === "auth/invalid-email") errMsg.innerText="Email is badly formatted.";
+      else errMsg.innerText="Registration failed. Please try again.";
+    });
+}
+</script>
+</body>
+</html>
