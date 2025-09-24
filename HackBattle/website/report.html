@@ -1,0 +1,158 @@
+report.html-
+
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Insight Lens — Reports</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<style>
+body {
+  margin:0;
+  min-height:100vh;
+  background:linear-gradient(180deg,#050b18,#081226);
+  color:#e6eef6;
+  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto;
+}
+.sidebar {
+  width:240px;
+  background:#0a1227;
+  min-height:100vh;
+  padding:20px;
+}
+.sidebar h2 { font-size:20px; font-weight:600; margin-bottom:30px; }
+.sidebar a, .sidebar button {
+  display:block;
+  padding:10px 12px;
+  margin-bottom:10px;
+  border-radius:8px;
+  color:#e6eef6;
+  text-decoration:none;
+  background:none;
+  border:none;
+  text-align:left;
+  cursor:pointer;
+}
+.sidebar a:hover, .sidebar button:hover { background:#16213c; }
+.sidebar .logout { background:linear-gradient(90deg,#f87171,#fbbf24); margin-top:30px; }
+.main { flex:1; padding:40px; }
+.card {
+  background:#0f172a;
+  padding:25px;
+  border-radius:14px;
+  box-shadow:0 6px 14px rgba(0,0,0,0.35);
+  margin-bottom:30px;
+}
+h1 { font-size:28px; margin-bottom:20px; font-weight:600; }
+h2 { font-size:22px; margin-bottom:16px; font-weight:600; }
+ul { margin-left:20px; line-height:1.8; }
+li { margin-bottom:10px; }
+button {
+  background:linear-gradient(90deg,#60a5fa,#5eead4);
+  color:#052039;
+  padding:10px 16px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  font-weight:600;
+}
+button:hover { opacity:0.9; }
+</style>
+</head>
+<body>
+<div style="display:flex;">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>Insight Lens</h2>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="overview.html">Website Overview</a>
+    <a href="performance.html">Performance</a>
+    <a href="reports.html">Reports</a>
+    <a href="activity.html">Activity</a>
+    <button class="logout" onclick="logout()">Logout</button>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main">
+    <div class="card">
+      <h1>Website Reports</h1>
+      <p id="siteName" class="text-gray-400 mb-4"></p>
+      <button onclick="loadReport()">Generate Full Report</button>
+      <p id="err" class="mt-3 text-red-400"></p>
+    </div>
+
+    <div id="reportContent"></div>
+  </div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyA6gK_ueYde6YDbElQILh-OytSDdsNs38E",
+  authDomain: "insightlens-8898b.firebaseapp.com",
+  projectId: "insightlens-8898b",
+  appId: "1:473621063845:web:8d2f9df0efa8c6491c854c"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+
+// redirect if not logged in
+auth.onAuthStateChanged(user => { if(!user) location.href='login.html'; });
+
+function logout(){ auth.signOut().then(()=>location.href='login.html'); }
+
+async function loadReport() {
+  const url = localStorage.getItem('currentWebsite');
+  if(!url){ document.getElementById('err').innerText="No website selected!"; return; }
+
+  document.getElementById('siteName').innerText = `Generating report for: ${url}`;
+  const reportDiv = document.getElementById('reportContent');
+  reportDiv.innerHTML = "<p class='text-gray-400'>Fetching website data...</p>";
+
+  const geminiKey = "AIzaSyB7Cr2spf8O7GG3E_Y4lsmMhKZbkFBlR40";
+  const psiKey = "AIzaSyA6QYCT9UN5TnfP0mW3AVHMEW0MS00q1ao";
+
+  try {
+    // Gemini API
+    const gemRes = await fetch(`https://gemini.googleapis.com/v1/urls:analyze?url=${encodeURIComponent(url)}&key=${geminiKey}`);
+    const gemData = await gemRes.json();
+
+    // PageSpeed Insights API
+    const psiRes = await fetch(`https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&key=${psiKey}`);
+    const psiData = await psiRes.json();
+
+    const recommendations = gemData.recommendations || [];
+    const audits = psiData.lighthouseResult?.audits || {};
+
+    let content = `
+      <div class="card">
+        <h2>Performance Metrics</h2>
+        <ul>
+          <li>First Contentful Paint (FCP): ${audits['first-contentful-paint']?.displayValue || 'N/A'}</li>
+          <li>Speed Index: ${audits['speed-index']?.displayValue || 'N/A'}</li>
+          <li>Time to Interactive (TTI): ${audits['interactive']?.displayValue || 'N/A'}</li>
+          <li>Total Blocking Time: ${audits['total-blocking-time']?.displayValue || 'N/A'}</li>
+          <li>Cumulative Layout Shift (CLS): ${audits['cumulative-layout-shift']?.displayValue || 'N/A'}</li>
+        </ul>
+      </div>
+
+      <div class="card">
+        <h2>General Recommendations</h2>
+        <ul>
+          ${recommendations.length ? recommendations.map(r => `<li>${r.description}</li>`).join('') : "<li>No recommendations found.</li>"}
+        </ul>
+      </div>
+    `;
+
+    reportDiv.innerHTML = content;
+
+  } catch(err) {
+    document.getElementById('err').innerText = "Failed to fetch report. Please try again later.";
+    console.error(err);
+  }
+}
+</script>
+</body>
+</html>
