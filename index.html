@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Real Estate Location Prediction</title>
+  <link rel="stylesheet" href="styles.css"/>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+</head>
+<body>
+  <header>
+    <h1>Real Estate Location Prediction</h1>
+    <nav>
+      <button id="loginBtn">Login</button>
+      <button id="registerBtn">Register</button>
+      <button id="logoutBtn" class="hidden">Logout</button>
+      <span id="roleBadge" class="badge hidden"></span>
+    </nav>
+  </header>
+
+  <main>
+    <section class="panel">
+      <h2>Search Listings</h2>
+      <form id="searchForm">
+        <div class="row">
+          <label>Location (City/Area)
+            <input type="text" name="location" placeholder="e.g., Vellore, Indiranagar" />
+          </label>
+          <label>Property Type
+            <select name="property_type">
+              <option value="">Any</option>
+              <option>Apartment</option>
+              <option>House</option>
+              <option>Studio</option>
+              <option>PG</option>
+              <option>Plot</option>
+            </select>
+          </label>
+          <label>Min Price
+            <input type="number" name="min_price" min="0" step="1000" />
+          </label>
+          <label>Max Price
+            <input type="number" name="max_price" min="0" step="1000" />
+          </label>
+        </div>
+
+        <details>
+          <summary>Feature Selection (Amenities, Community)</summary>
+          <div class="grid-3">
+            <fieldset>
+              <legend>Amenities</legend>
+              <label><input type="checkbox" name="amenities" value="near_metro"> Near Metro</label>
+              <label><input type="checkbox" name="amenities" value="pet_friendly"> Pet Friendly</label>
+              <label><input type="checkbox" name="amenities" value="gym"> Gym</label>
+              <label><input type="checkbox" name="amenities" value="parking"> Parking</label>
+              <label><input type="checkbox" name="amenities" value="pool"> Pool</label>
+              <label><input type="checkbox" name="amenities" value="power_backup"> Power Backup</label>
+            </fieldset>
+            <fieldset>
+              <legend>Community</legend>
+              <label><input type="checkbox" name="community_tags" value="quiet_neighborhood"> Quiet Neighborhood</label>
+              <label><input type="checkbox" name="community_tags" value="student_friendly"> Student Friendly</label>
+              <label><input type="checkbox" name="community_tags" value="family_friendly"> Family Friendly</label>
+              <label><input type="checkbox" name="community_tags" value="nightlife"> Nightlife</label>
+            </fieldset>
+            <fieldset>
+              <legend>Sort By</legend>
+              <label><input type="radio" name="sort_by" value="" checked> Relevance</label>
+              <label><input type="radio" name="sort_by" value="price"> Price</label>
+              <label><input type="radio" name="sort_by" value="score"> Score</label>
+            </fieldset>
+          </div>
+        </details>
+
+        <div class="row">
+          <button type="submit">Search</button>
+          <span id="searchStatus"></span>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel hidden" id="brokerPanel">
+      <h2>Broker: Add / Update Listing</h2>
+      <form id="listingForm">
+        <div class="row">
+          <label>Title
+            <input type="text" name="title" required placeholder="2BHK near Katpadi Station"/>
+          </label>
+          <label>City / Area
+            <input type="text" name="location" required placeholder="e.g., Vellore - Katpadi"/>
+          </label>
+          <label>Lat
+            <input type="number" name="lat" step="0.000001" placeholder="12.9165"/>
+          </label>
+          <label>Lng
+            <input type="number" name="lng" step="0.000001" placeholder="79.1325"/>
+          </label>
+        </div>
+        <div class="row">
+          <label>Price (INR)
+            <input type="number" name="price" min="0" step="1000" required/>
+          </label>
+          <label>Property Type
+            <select name="property_type" required>
+              <option>Apartment</option>
+              <option>House</option>
+              <option>Studio</option>
+              <option>PG</option>
+              <option>Plot</option>
+            </select>
+          </label>
+        </div>
+        <label>Description
+          <textarea name="description" rows="3" placeholder="Spacious 2BHK with balcony..."></textarea>
+        </label>
+        <fieldset>
+          <legend>Amenities</legend>
+          <div class="chips">
+            <label><input type="checkbox" name="amenities" value="near_metro"> Near Metro</label>
+            <label><input type="checkbox" name="amenities" value="pet_friendly"> Pet Friendly</label>
+            <label><input type="checkbox" name="amenities" value="gym"> Gym</label>
+            <label><input type="checkbox" name="amenities" value="parking"> Parking</label>
+            <label><input type="checkbox" name="amenities" value="pool"> Pool</label>
+            <label><input type="checkbox" name="amenities" value="power_backup"> Power Backup</label>
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>Community Tags</legend>
+          <div class="chips">
+            <label><input type="checkbox" name="community_tags" value="quiet_neighborhood"> Quiet Neighborhood</label>
+            <label><input type="checkbox" name="community_tags" value="student_friendly"> Student Friendly</label>
+            <label><input type="checkbox" name="community_tags" value="family_friendly"> Family Friendly</label>
+            <label><input type="checkbox" name="community_tags" value="nightlife"> Nightlife</label>
+          </div>
+        </fieldset>
+
+        <div class="row">
+          <button type="submit">Save Listing</button>
+          <span id="listingStatus"></span>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel">
+      <h2>Results</h2>
+      <div class="layout">
+        <div id="results"></div>
+        <div id="map"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modals -->
+  <dialog id="loginModal">
+    <form method="dialog" id="loginForm" class="dialog-form">
+      <h3>Login</h3>
+      <label>Email <input type="email" name="email" required/></label>
+      <label>Password <input type="password" name="password" required/></label>
+      <menu>
+        <button value="cancel">Cancel</button>
+        <button id="loginSubmit" value="default">Login</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <dialog id="registerModal">
+    <form method="dialog" id="registerForm" class="dialog-form">
+      <h3>Register</h3>
+      <label>Email <input type="email" name="email" required/></label>
+      <label>Password <input type="password" name="password" required/></label>
+      <label>Role
+        <select name="role" required>
+          <option value="finder">Property Finder</option>
+          <option value="broker">Broker</option>
+        </select>
+      </label>
+      <menu>
+        <button value="cancel">Cancel</button>
+        <button id="registerSubmit" value="default">Create Account</button>
+      </menu>
+    </form>
+  </dialog>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+    window.API_BASE = "http://127.0.0.1:8000"; // change if backend runs elsewhere
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>
