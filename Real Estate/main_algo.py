@@ -1,3 +1,5 @@
+#Run this using uvicorn main:app --reload and open the browser at http://127.0.0.1:8000/docs
+
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List
