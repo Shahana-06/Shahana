@@ -1,0 +1,31 @@
+{
+  "sample_properties": [
+    {
+      "name": "Luxury Villa - Whitefield",
+      "location": "Bangalore",
+      "community": "Whitefield",
+      "price": 8500000,
+      "area": "3000 sq.ft",
+      "bedrooms": 4,
+      "bathrooms": 3,
+      "owner_name": "Rajesh Kumar",
+      "owner_phone": "+91-9876543210",
+      "owner_email": "rajesh.kumar@email.com",
+      "amenities": ["gym", "pool", "parking", "garden", "security", "club_house"],
+      "description": "Luxurious 4BHK villa in prime Whitefield location with modern amenities and spacious interiors."
+    },
+    {
+      "name": "Cozy Apartment - Koramangala",
+      "location": "Bangalore",
+      "community": "Koramangala",
+      "price": 4500000,
+      "area": "1200 sq.ft",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "owner_name": "Priya Sharma",
+      "owner_phone": "+91-9876543211",
+      "owner_email": "priya.sharma@email.com",
+      "amenities": ["parking", "security", "power_backup", "elevator"],
+      "description": "Well-maintained 2BHK apartment in the heart of Koramangala, close to restaurants and shopping."
+    },
+    }
