@@ -1,5 +1,3 @@
-#Run this using uvicorn main:app --reload and open the browser at http://127.0.0.1:8000/docs
-
 from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List
@@ -24,7 +22,7 @@ try:
     cred = credentials.Certificate("serviceAccountKey.json")  # 🔑 your downloaded key file
     firebase_admin.initialize_app(cred)
 except ValueError:
-    pass  # ignore reinitialization error
+    pass  # ignore if already initialized
 
 db = firestore.client()
 
@@ -66,20 +64,20 @@ def location_similarity(user_loc: str, listing_loc: str):
 # ---------- 5️⃣ Scoring + Firestore Update ----------
 @app.post("/search")
 def search_properties(user_input: UserInput):
-    listings_ref = db.collection("listings")
-    docs = listings_ref.stream()
-    listings = []
+    properties_ref = db.collection("properties")
+    docs = properties_ref.stream()
+    properties = []
 
     for doc in docs:
         data = doc.to_dict()
         data["id"] = doc.id
-        listings.append(data)
+        properties.append(data)
 
-    if not listings:
-        return {"error": "No listings found in Firebase."}
+    if not properties:
+        return {"error": "No properties found in Firebase."}
 
     # --- Normalize prices ---
-    all_prices = [l["price"] for l in listings if "price" in l] + [
+    all_prices = [p["price"] for p in properties if "price" in p] + [
         user_input.min_price, user_input.max_price
     ]
     scaler = MinMaxScaler()
@@ -87,7 +85,7 @@ def search_properties(user_input: UserInput):
     user_price_score = float((scaled_prices[-1][0] + scaled_prices[-2][0]) / 2)
 
     # --- User feature scores ---
-    total_possible_amenities = len({a for l in listings for a in l.get("amenities", [])})
+    total_possible_amenities = len({a for p in properties for a in p.get("amenities", [])})
     user_amenity_score = len(user_input.amenities) / total_possible_amenities if total_possible_amenities else 0
     user_community_score = 1.0
     user_location_score = 1.0
@@ -97,27 +95,27 @@ def search_properties(user_input: UserInput):
     user_score = compute_score(user_price_score, user_amenity_score,
                                user_community_score, user_location_score, weights)
 
-    # --- Compute scores for each listing ---
-    for l in listings:
-        scaled_price = float(scaler.transform([[l["price"]]])[0][0])
-        amenity_match = len(set(l.get("amenities", [])) & set(user_input.amenities)) / total_possible_amenities if total_possible_amenities else 0
-        community_match = 1.0 if l.get("community") == user_input.community else 0.5
-        location_match = location_similarity(user_input.location, l.get("location", ""))
+    # --- Compute scores for each property ---
+    for p in properties:
+        scaled_price = float(scaler.transform([[p["price"]]])[0][0])
+        amenity_match = len(set(p.get("amenities", [])) & set(user_input.amenities)) / total_possible_amenities if total_possible_amenities else 0
+        community_match = 1.0 if p.get("community") == user_input.community else 0.5
+        location_match = location_similarity(user_input.location, p.get("location", ""))
 
-        l["score"] = compute_score(scaled_price, amenity_match,
+        p["score"] = compute_score(scaled_price, amenity_match,
                                    community_match, location_match, weights)
 
         # --- Safe Firestore Update ---
         try:
-            listings_ref.document(l["id"]).set(
-                {**l, "score": l["score"]}, merge=True  # ✅ creates or updates field
+            properties_ref.document(p["id"]).set(
+                {**p, "score": p["score"]}, merge=True  # ✅ creates or updates field
             )
         except Exception as e:
-            print(f"⚠️ Could not update {l['id']}: {e}")
+            print(f"⚠️ Could not update {p['id']}: {e}")
 
     # --- Filter matches within ±10% ---
     TOLERANCE = 0.1
-    matched = [l for l in listings if math.isclose(l["score"], user_score, rel_tol=TOLERANCE)]
+    matched = [p for p in properties if math.isclose(p["score"], user_score, rel_tol=TOLERANCE)]
 
     return {
         "user_score": round(user_score, 3),
