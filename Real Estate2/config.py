@@ -23,10 +23,10 @@ class Config:
     APP_VERSION = "1.0.0"
     
     # Scoring Algorithm Weights
-    WEIGHT_PRICE = 0.3
-    WEIGHT_AMENITY = 0.3
-    WEIGHT_LOCATION = 0.2
-    WEIGHT_COMMUNITY = 0.2
+    WEIGHT_PRICE = 0.4      
+    WEIGHT_AMENITY = 0.2    
+    WEIGHT_LOCATION = 0.3
+    WEIGHT_COMMUNITY = 0.1
     
     # Search Settings
     MAX_SEARCH_RESULTS = 10
