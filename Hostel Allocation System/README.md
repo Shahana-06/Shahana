@@ -39,13 +39,9 @@ cd student-form
 Hostel Allocation System/
 ├── frontend/           # React web application
 ├── student-form/       # Student preference form
-├── docs/              # Documentation
 └── data/              # Sample data files
 ```
 
-## 📖 Documentation
-- Technical Report: See `docs/TECHNICAL_REPORT.md`
-- User Guide: See `docs/USER_GUIDE.md`
 
 ## 🤝 Contributing
 Pull requests welcome!
