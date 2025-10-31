@@ -36,7 +36,7 @@ cd student-form
 
 ## 📁 Project Structure
 ```
-hostel-allocation-system/
+Hostel Allocation System/
 ├── frontend/           # React web application
 ├── student-form/       # Student preference form
 ├── docs/              # Documentation
@@ -54,7 +54,10 @@ Pull requests welcome!
 MIT License
 
 ## 👥 Authors
-[Your Name] - [Your University]
+[Shahana Suresh] - [VIT University, Vellore]
+[Irman Kaur] - [VIT University, Vellore]
+[V Kamali] - [VIT University, Vellore]
+[Maha Srre Sveta] - [VIT University, Vellore]
 
 ## 📧 Contact
-For questions: [your.email@university.edu]
+For questions: [shahana.suresh2024@vitstudent.ac.in]
