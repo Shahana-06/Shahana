@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+venv/
+env/
+*.pyc
+__pycache__/
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+# Environment variables
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test coverage
+coverage/
+.coverage
+
+# Data files (optional)
+results/
