@@ -50,9 +50,9 @@ Pull requests welcome!
 MIT License
 
 ## 👥 Authors
-[Shahana Suresh] - [VIT University, Vellore]
-[Irman Kaur] - [VIT University, Vellore]
-[V Kamali] - [VIT University, Vellore]
+[Shahana Suresh] - [VIT University, Vellore];
+[Irman Kaur] - [VIT University, Vellore];
+[V Kamali] - [VIT University, Vellore];
 [Maha Srre Sveta] - [VIT University, Vellore]
 
 ## 📧 Contact
