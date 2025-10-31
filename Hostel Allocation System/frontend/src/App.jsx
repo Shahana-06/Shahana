@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Upload, Play, Download, Users, Home, BarChart3, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 
+import studentData from "./student.json";
+
 // Sample data generator
 const generateSampleData = () => {
   const names = ['Aarav Kumar', 'Diya Sharma', 'Arjun Patel', 'Ananya Singh', 'Rohan Gupta', 
@@ -58,6 +60,9 @@ const generateRooms = () => {
   });
   return rooms;
 };
+
+
+
 
 // Allocation Algorithm
 const allocateRooms = (students, rooms) => {
@@ -233,7 +238,7 @@ const allocateRooms = (students, rooms) => {
 };
 
 const App = () => {
-  const [students, setStudents] = useState([]);
+  const [students, setStudents] = useState([studentData]);
   const [rooms, setRooms] = useState(generateRooms());
   const [results, setResults] = useState(null);
   const [activeTab, setActiveTab] = useState('upload');
