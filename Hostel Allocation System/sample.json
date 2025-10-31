@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Aarav Kumar",
+    "regNo": "2021101",
+    "year": 3,
+    "rank": 15,
+    "accessibility": false,
+    "preferences": [
+      {
+        "priority": 1,
+        "block": "Block A",
+        "room": "101",
+        "sharing": "6-sharing",
+        "type": "AC",
+        "roommates": ["2021102"],
+        "backup": false
+      }
+    ]
+  }
+]
