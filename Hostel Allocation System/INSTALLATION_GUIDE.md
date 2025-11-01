@@ -29,13 +29,19 @@ Make sure you have the following installed:
 ```bash
 cd Desktop/hostel-allocation-system/frontend
 
+---
+
 ## 📂 Step 3: Install dependencies
 ```bash
 npm install
 
+---
+
 ## 📂 Step 4: Run the application
 ```bash
 npm run dev
+
+---
 
 ## 📂 Step 5: Open in browser
 http://localhost:3000
