@@ -1,5 +1,3 @@
-Got it 👍 — here’s your **full `.md` file** with **Step 3** properly added and formatted inside:
-
 ````markdown
 # 🏠 Hostel Allocation System — Installation Guide
 
@@ -42,6 +40,9 @@ Run the following command to install all required packages:
 ```bash
 npm install
 ```
-
+---
+## 🧩 Step 4: Run the code
+```bash
+npm run dev
 ```
 
