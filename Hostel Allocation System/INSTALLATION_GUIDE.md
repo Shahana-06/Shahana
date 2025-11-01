@@ -1,3 +1,6 @@
+Got it 👍 — here’s your **full `.md` file** with **Step 3** properly added and formatted inside:
+
+````markdown
 # 🏠 Hostel Allocation System — Installation Guide
 
 Follow the steps below to install and run the **frontend** of the Hostel Allocation System.
@@ -28,18 +31,17 @@ Make sure you have the following installed:
 ## 📂 Step 2: Navigate to the Frontend Folder
 ```bash
 cd Desktop/hostel-allocation-system/frontend
-📦 Step 3: Install Dependencies
-bash
-Copy code
+````
+
+---
+
+## 🧩 Step 3: Install Dependencies
+
+Run the following command to install all required packages:
+
+```bash
 npm install
-⏳ This may take 2–3 minutes depending on your internet speed.
+```
 
-🚀 Step 4: Run the Application
-bash
-Copy code
-npm run dev
-🌐 Step 5: Open in Browser
-Once the development server starts, open your browser and visit:
-
-👉 http://localhost:3000
+```
 
