@@ -37,8 +37,8 @@ cd student-form
 ## 📁 Project Structure
 ```
 Hostel Allocation System/
-├── frontend/           # React web application
-├── student-form/       # Student preference form
+├── frontend/           # React web application (check INSTALLATION_GUIDE.md)
+├── student-form/       # Student preference form (run index.html)
 └── data/              # Sample data files
 ```
 
