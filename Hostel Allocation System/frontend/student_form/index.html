@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hostel Room Allocation - Student Preference Form</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 { font-size: 28px; margin-bottom: 10px; }
+        .header p { font-size: 14px; opacity: 0.9; }
+        
+        .form-content { padding: 40px; }
+        .section { margin-bottom: 40px; }
+        
+        .section-title {
+            font-size: 20px;
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .preference-card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 2px solid #e0e0e0;
+            transition: all 0.3s;
+        }
+        
+        .preference-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+        }
+        
+        .preference-number {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        
+        .room-priority-section {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 2px dashed #667eea;
+        }
+        
+        .room-priority-title {
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 15px;
+        }
+        
+        .room-priority-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .priority-badge {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-weight: 600;
+            min-width: 80px;
+            text-align: center;
+            font-size: 13px;
+        }
+        
+        .room-priority-item input {
+            flex: 1;
+        }
+        
+        .roommate-section {
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
+        .roommate-input {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .roommate-input input { flex: 1; }
+        
+        .add-btn, .remove-btn {
+            padding: 8px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .add-btn {
+            background: #10b981;
+            color: white;
+        }
+        
+        .add-btn:hover { background: #059669; }
+        
+        .remove-btn {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .remove-btn:hover { background: #dc2626; }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            cursor: pointer;
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .info-box {
+            background: #e0e7ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        
+        .info-box p {
+            margin: 5px 0;
+            font-size: 14px;
+            color: #4338ca;
+        }
+        
+        .help-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .form-row { grid-template-columns: 1fr; }
+            .form-content { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏠 Hostel Room Allocation System</h1>
+            <p>Student Preference Submission Form - Academic Year 2024-25</p>
+        </div>
+        
+        <div class="form-content">
+            <div class="info-box">
+                <p><strong>📋 How to Fill This Form:</strong></p>
+                <p>• You can submit up to <strong>5 block preferences</strong></p>
+                <p>• For each preference, specify Block, Sharing Type, and AC/Non-AC</p>
+                <p>• <strong>NEW!</strong> You can list up to <strong>10 specific rooms</strong> within each block (in priority order)</p>
+                <p>• If you don't specify rooms, we'll consider any room in that block</p>
+                <p>• Add roommate registration numbers for each preference</p>
+                <p>• <strong>Seniors with better ranks get priority over juniors!</strong></p>
+            </div>
+            
+            <form id="preferenceForm">
+                <div class="section">
+                    <h2 class="section-title">📋 Personal Details</h2>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="name">Full Name *</label>
+                            <input type="text" id="name" required placeholder="Enter your full name">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="regNo">Registration Number *</label>
+                            <input type="text" id="regNo" required placeholder="e.g., 2021001">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="year">Academic Year * (2nd/3rd/4th Year Only)</label>
+                            <select id="year" required>
+                                <option value="">Select Year</option>
+                                <option value="2">2nd Year</option>
+                                <option value="3">3rd Year</option>
+                                <option value="4">4th Year</option>
+                            </select>
+                            <p class="help-text">Only 2nd/3rd/4th year students (with CGPA-based ranks) can apply</p>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="rank">Academic Rank *</label>
+                            <input type="number" id="rank" required placeholder="e.g., 150" min="1">
+                        </div>
+                    </div>
+                    
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="accessibility">
+                        <label for="accessibility">I require accessibility features (ground floor, ramps, etc.)</label>
+                    </div>
+                </div>
+                
+                <div class="section">
+                    <h2 class="section-title">🏠 Block Preferences (Up to 5)</h2>
+                    <p class="help-text" style="margin-bottom: 20px;">For each preference, you can optionally specify up to 10 rooms in priority order within that block.</p>
+                    <div id="preferencesContainer"></div>
+                </div>
+                
+                <button type="submit" class="submit-btn">Submit Preferences & Download JSON</button>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        const blocks = ['Block A', 'Block B', 'Block C', 'Block D'];
+        const sharingTypes = ['2-sharing', '3-sharing', '4-sharing', '5-sharing', '6-sharing'];
+        const roomTypes = ['AC', 'Non-AC'];
+        
+        let preferenceCount = 0;
+        
+        function createPreferenceCard(number) {
+            const card = document.createElement('div');
+            card.className = 'preference-card';
+            card.innerHTML = `
+                <span class="preference-number">Block Preference ${number}</span>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Block *</label>
+                        <select class="pref-block" required>
+                            <option value="">Select Block</option>
+                            ${blocks.map(b => `<option value="${b}">${b}</option>`).join('')}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Sharing Type *</label>
+                        <select class="pref-sharing" required>
+                            <option value="">Select Type</option>
+                            ${sharingTypes.map(s => `<option value="${s}">${s}</option>`).join('')}
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Room Type *</label>
+                    <select class="pref-type" required>
+                        <option value="">Select Type</option>
+                        ${roomTypes.map(t => `<option value="${t}">${t}</option>`).join('')}
+                    </select>
+                </div>
+                
+                <div class="room-priority-section">
+                    <div class="room-priority-title">🎯 Room Priorities (Optional - Up to 10 rooms)</div>
+                    <p class="help-text" style="margin-bottom: 15px;">List specific rooms in this block in order of preference. Leave blank to consider any room in the block.</p>
+                    <div class="room-priorities-list" data-pref="${number}">
+                        ${Array.from({length: 10}, (_, i) => `
+                            <div class="room-priority-item">
+                                <span class="priority-badge">Room ${i + 1}</span>
+                                <input type="text" placeholder="e.g., 101, 205, etc. (optional)" class="room-priority-input">
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                
+                <div class="roommate-section">
+                    <label><strong>Roommate Registration Numbers</strong></label>
+                    <p style="font-size: 12px; color: #666; margin-bottom: 10px;">Add registration numbers of students you want as roommates for this preference</p>
+                    <div class="roommates-list" data-pref="${number}">
+                        <div class="roommate-input">
+                            <input type="text" placeholder="Registration Number" class="roommate-reg">
+                            <button type="button" class="add-btn" onclick="addRoommate(${number})">+ Add</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="checkbox-group">
+                    <input type="checkbox" class="backup-checkbox">
+                    <label>Mark as backup option</label>
+                </div>
+            `;
+            return card;
+        }
+        
+        function addRoommate(prefNumber) {
+            const container = document.querySelector(`.roommates-list[data-pref="${prefNumber}"]`);
+            const inputs = container.querySelectorAll('.roommate-reg');
+            const lastInput = inputs[inputs.length - 1];
+            
+            if (lastInput.value.trim() === '') {
+                alert('Please enter a registration number first');
+                return;
+            }
+            
+            const newInput = document.createElement('div');
+            newInput.className = 'roommate-input';
+            newInput.innerHTML = `
+                <input type="text" placeholder="Registration Number" class="roommate-reg">
+                <button type="button" class="remove-btn" onclick="this.parentElement.remove()">Remove</button>
+            `;
+            container.appendChild(newInput);
+        }
+        
+        function addPreference() {
+            if (preferenceCount >= 5) {
+                alert('Maximum 5 block preferences allowed');
+                return;
+            }
+            
+            preferenceCount++;
+            const container = document.getElementById('preferencesContainer');
+            container.appendChild(createPreferenceCard(preferenceCount));
+            
+            if (preferenceCount < 5) {
+                const addMoreBtn = document.createElement('button');
+                addMoreBtn.type = 'button';
+                addMoreBtn.className = 'add-btn';
+                addMoreBtn.style.marginTop = '10px';
+                addMoreBtn.style.padding = '12px 24px';
+                addMoreBtn.style.fontSize = '14px';
+                addMoreBtn.textContent = `+ Add Block Preference ${preferenceCount + 1}`;
+                addMoreBtn.onclick = () => {
+                    addMoreBtn.remove();
+                    addPreference();
+                };
+                container.appendChild(addMoreBtn);
+            }
+        }
+        
+        // Initialize with first preference
+        addPreference();
+        
+        document.getElementById('preferenceForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = {
+                name: document.getElementById('name').value,
+                regNo: document.getElementById('regNo').value,
+                year: parseInt(document.getElementById('year').value),
+                rank: parseInt(document.getElementById('rank').value),
+                accessibility: document.getElementById('accessibility').checked,
+                preferences: []
+            };
+            
+            const cards = document.querySelectorAll('.preference-card');
+            cards.forEach((card, index) => {
+                // Collect roommates
+                const roommates = [];
+                const roommateInputs = card.querySelectorAll('.roommate-reg');
+                roommateInputs.forEach(input => {
+                    if (input.value.trim()) {
+                        roommates.push(input.value.trim());
+                    }
+                });
+                
+                // Collect room priorities
+                const roomPriorities = [];
+                const roomInputs = card.querySelectorAll('.room-priority-input');
+                roomInputs.forEach(input => {
+                    if (input.value.trim()) {
+                        roomPriorities.push(input.value.trim());
+                    }
+                });
+                
+                formData.preferences.push({
+                    priority: index + 1,
+                    block: card.querySelector('.pref-block').value,
+                    sharing: card.querySelector('.pref-sharing').value,
+                    type: card.querySelector('.pref-type').value,
+                    roomPriorities: roomPriorities, // Array of room numbers in priority order
+                    roommates: roommates,
+                    backup: card.querySelector('.backup-checkbox').checked
+                });
+            });
+            
+            console.log('Form Data:', formData);
+            
+            const dataStr = JSON.stringify(formData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `preference_${formData.regNo}.json`;
+            link.click();
+            
+            let totalRooms = formData.preferences.reduce((sum, pref) => sum + pref.roomPriorities.length, 0);
+            alert(`✅ Form submitted successfully!\n\n` +
+                  `JSON file downloaded: preference_${formData.regNo}.json\n\n` +
+                  `Block preferences: ${formData.preferences.length}\n` +
+                  `Total specific rooms listed: ${totalRooms}`);
+        });
+    </script>
+</body>
+</html>
