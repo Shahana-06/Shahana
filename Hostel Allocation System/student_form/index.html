@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hostel Room Allocation - Student Preference Form</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -19,7 +15,7 @@
         }
         
         .container {
-            max-width: 900px;
+            max-width: 1000px;
             margin: 0 auto;
             background: white;
             border-radius: 20px;
@@ -34,23 +30,11 @@
             text-align: center;
         }
         
-        .header h1 {
-            font-size: 28px;
-            margin-bottom: 10px;
-        }
+        .header h1 { font-size: 28px; margin-bottom: 10px; }
+        .header p { font-size: 14px; opacity: 0.9; }
         
-        .header p {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-        
-        .form-content {
-            padding: 40px;
-        }
-        
-        .section {
-            margin-bottom: 40px;
-        }
+        .form-content { padding: 40px; }
+        .section { margin-bottom: 40px; }
         
         .section-title {
             font-size: 20px;
@@ -60,10 +44,7 @@
             border-bottom: 2px solid #667eea;
         }
         
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
+        .form-group { margin-bottom: 20px; }
         .form-group label {
             display: block;
             margin-bottom: 8px;
@@ -71,8 +52,7 @@
             color: #333;
         }
         
-        .form-group input,
-        .form-group select {
+        .form-group input, .form-group select {
             width: 100%;
             padding: 12px;
             border: 2px solid #e0e0e0;
@@ -81,8 +61,7 @@
             transition: all 0.3s;
         }
         
-        .form-group input:focus,
-        .form-group select:focus {
+        .form-group input:focus, .form-group select:focus {
             outline: none;
             border-color: #667eea;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
@@ -96,7 +75,7 @@
         
         .preference-card {
             background: #f8f9fa;
-            padding: 20px;
+            padding: 25px;
             border-radius: 12px;
             margin-bottom: 20px;
             border: 2px solid #e0e0e0;
@@ -112,10 +91,52 @@
             display: inline-block;
             background: #667eea;
             color: white;
-            padding: 5px 15px;
+            padding: 8px 20px;
             border-radius: 20px;
             font-weight: 600;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        
+        .room-priority-section {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 2px dashed #667eea;
+        }
+        
+        .room-priority-title {
+            font-weight: 600;
+            color: #667eea;
             margin-bottom: 15px;
+            font-size: 15px;
+        }
+        
+        .room-priority-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+        
+        .priority-badge {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 5px;
+            font-weight: 600;
+            min-width: 80px;
+            text-align: center;
+            font-size: 13px;
+        }
+        
+        .priority-badge.required-room {
+            background: #dc2626;
+        }
+        
+        .room-priority-item input {
+            flex: 1;
         }
         
         .roommate-section {
@@ -131,9 +152,7 @@
             margin-bottom: 10px;
         }
         
-        .roommate-input input {
-            flex: 1;
-        }
+        .roommate-input input { flex: 1; }
         
         .add-btn, .remove-btn {
             padding: 8px 15px;
@@ -150,18 +169,14 @@
             color: white;
         }
         
-        .add-btn:hover {
-            background: #059669;
-        }
+        .add-btn:hover { background: #059669; }
         
         .remove-btn {
             background: #ef4444;
             color: white;
         }
         
-        .remove-btn:hover {
-            background: #dc2626;
-        }
+        .remove-btn:hover { background: #dc2626; }
         
         .checkbox-group {
             display: flex;
@@ -207,14 +222,15 @@
             color: #4338ca;
         }
         
+        .help-text {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
         @media (max-width: 768px) {
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-            
-            .form-content {
-                padding: 20px;
-            }
+            .form-row { grid-template-columns: 1fr; }
+            .form-content { padding: 20px; }
         }
     </style>
 </head>
@@ -227,15 +243,16 @@
         
         <div class="form-content">
             <div class="info-box">
-                <p><strong>Important Instructions:</strong></p>
-                <p>• Rank your preferences in order of priority (1 = most preferred)</p>
+                <p><strong>📋 How to Fill This Form:</strong></p>
+                <p>• You can submit up to <strong>5 block preferences</strong></p>
+                <p>• For each preference, specify Block, Sharing Type, and AC/Non-AC</p>
+                <p>• <strong>IMPORTANT!</strong> You MUST list at least <strong>5 specific rooms</strong> for each block (up to 10 rooms total)</p>
+                <p>• List rooms in order of preference (most preferred first)</p>
                 <p>• Add roommate registration numbers for each preference</p>
-                <p>• You can mark preferences as "Backup" options</p>
-                <p>• Ensure all roommates reciprocally add each other in their forms</p>
+                <p>• <strong>Seniors with better ranks get priority over juniors!</strong></p>
             </div>
             
             <form id="preferenceForm">
-                <!-- Personal Details Section -->
                 <div class="section">
                     <h2 class="section-title">📋 Personal Details</h2>
                     
@@ -253,14 +270,14 @@
                     
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="year">Academic Year *</label>
+                            <label for="year">Academic Year * (2nd/3rd/4th Year Only)</label>
                             <select id="year" required>
                                 <option value="">Select Year</option>
-                                <option value="1">1st Year</option>
                                 <option value="2">2nd Year</option>
                                 <option value="3">3rd Year</option>
                                 <option value="4">4th Year</option>
                             </select>
+                            <p class="help-text">Only 2nd/3rd/4th year students (with CGPA-based ranks) can apply</p>
                         </div>
                         
                         <div class="form-group">
@@ -269,33 +286,19 @@
                         </div>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="email">Email Address *</label>
-                        <input type="email" id="email" required placeholder="your.email@university.edu">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="phone">Phone Number *</label>
-                        <input type="tel" id="phone" required placeholder="+91 XXXXX XXXXX">
-                    </div>
-                    
                     <div class="checkbox-group">
                         <input type="checkbox" id="accessibility">
                         <label for="accessibility">I require accessibility features (ground floor, ramps, etc.)</label>
                     </div>
                 </div>
                 
-                <!-- Room Preferences Section -->
                 <div class="section">
-                    <h2 class="section-title">🏠 Room Preferences (Up to 5)</h2>
-                    
-                    <div id="preferencesContainer">
-                        <!-- Preference 1 will be added by JavaScript -->
-                    </div>
+                    <h2 class="section-title">🏠 Block Preferences (Up to 5)</h2>
+                    <p class="help-text" style="margin-bottom: 20px;">For each preference, you MUST specify at least 5 rooms (up to 10 total) in priority order within that block.</p>
+                    <div id="preferencesContainer"></div>
                 </div>
                 
-                <!-- Submit Button -->
-                <button type="submit" class="submit-btn">Submit Preferences</button>
+                <button type="submit" class="submit-btn">Submit Preferences & Download JSON</button>
             </form>
         </div>
     </div>
@@ -311,11 +314,11 @@
             const card = document.createElement('div');
             card.className = 'preference-card';
             card.innerHTML = `
-                <span class="preference-number">Preference ${number}</span>
+                <span class="preference-number">Block Preference ${number}</span>
                 
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Block</label>
+                        <label>Block *</label>
                         <select class="pref-block" required>
                             <option value="">Select Block</option>
                             ${blocks.map(b => `<option value="${b}">${b}</option>`).join('')}
@@ -323,32 +326,38 @@
                     </div>
                     
                     <div class="form-group">
-                        <label>Room Number (Optional)</label>
-                        <input type="text" class="pref-room" placeholder="e.g., 101">
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Sharing Type</label>
+                        <label>Sharing Type *</label>
                         <select class="pref-sharing" required>
                             <option value="">Select Type</option>
                             ${sharingTypes.map(s => `<option value="${s}">${s}</option>`).join('')}
                         </select>
                     </div>
-                    
-                    <div class="form-group">
-                        <label>Room Type</label>
-                        <select class="pref-type" required>
-                            <option value="">Select Type</option>
-                            ${roomTypes.map(t => `<option value="${t}">${t}</option>`).join('')}
-                        </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Room Type *</label>
+                    <select class="pref-type" required>
+                        <option value="">Select Type</option>
+                        ${roomTypes.map(t => `<option value="${t}">${t}</option>`).join('')}
+                    </select>
+                </div>
+                
+                <div class="room-priority-section">
+                    <div class="room-priority-title">🎯 Room Priorities (At least 5 rooms REQUIRED - Up to 10 rooms)</div>
+                    <p class="help-text" style="margin-bottom: 15px;">You MUST list at least 5 specific rooms in this block in order of preference. You can add up to 10 rooms total.</p>
+                    <div class="room-priorities-list" data-pref="${number}">
+                        ${Array.from({length: 10}, (_, i) => `
+                            <div class="room-priority-item">
+                                <span class="priority-badge ${i < 5 ? 'required-room' : ''}">Room ${i + 1}${i < 5 ? ' *' : ''}</span>
+                                <input type="text" placeholder="e.g., 101, 205, etc. ${i < 5 ? '(REQUIRED)' : '(optional)'}" class="room-priority-input" ${i < 5 ? 'required' : ''}>
+                            </div>
+                        `).join('')}
                     </div>
                 </div>
                 
                 <div class="roommate-section">
                     <label><strong>Roommate Registration Numbers</strong></label>
-                    <p style="font-size: 12px; color: #666; margin-bottom: 10px;">Add registration numbers of students you want as roommates</p>
+                    <p style="font-size: 12px; color: #666; margin-bottom: 10px;">Add registration numbers of students you want as roommates for this preference</p>
                     <div class="roommates-list" data-pref="${number}">
                         <div class="roommate-input">
                             <input type="text" placeholder="Registration Number" class="roommate-reg">
@@ -386,7 +395,7 @@
         
         function addPreference() {
             if (preferenceCount >= 5) {
-                alert('Maximum 5 preferences allowed');
+                alert('Maximum 5 block preferences allowed');
                 return;
             }
             
@@ -399,7 +408,9 @@
                 addMoreBtn.type = 'button';
                 addMoreBtn.className = 'add-btn';
                 addMoreBtn.style.marginTop = '10px';
-                addMoreBtn.textContent = '+ Add Another Preference';
+                addMoreBtn.style.padding = '12px 24px';
+                addMoreBtn.style.fontSize = '14px';
+                addMoreBtn.textContent = `+ Add Block Preference ${preferenceCount + 1}`;
                 addMoreBtn.onclick = () => {
                     addMoreBtn.remove();
                     addPreference();
@@ -414,21 +425,40 @@
         document.getElementById('preferenceForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // Collect form data
+            // Validate that each preference has at least 5 rooms
+            const cards = document.querySelectorAll('.preference-card');
+            let validationError = false;
+            
+            cards.forEach((card, index) => {
+                const roomInputs = card.querySelectorAll('.room-priority-input');
+                let filledRooms = 0;
+                
+                for (let i = 0; i < 5; i++) {
+                    if (roomInputs[i].value.trim()) {
+                        filledRooms++;
+                    }
+                }
+                
+                if (filledRooms < 5) {
+                    alert(`⚠️ Block Preference ${index + 1} must have at least 5 room preferences filled!\n\nCurrently filled: ${filledRooms}/5 required rooms.`);
+                    validationError = true;
+                    roomInputs[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+            
+            if (validationError) return;
+            
             const formData = {
                 name: document.getElementById('name').value,
                 regNo: document.getElementById('regNo').value,
                 year: parseInt(document.getElementById('year').value),
                 rank: parseInt(document.getElementById('rank').value),
-                email: document.getElementById('email').value,
-                phone: document.getElementById('phone').value,
                 accessibility: document.getElementById('accessibility').checked,
                 preferences: []
             };
             
-            // Collect preferences
-            const cards = document.querySelectorAll('.preference-card');
             cards.forEach((card, index) => {
+                // Collect roommates
                 const roommates = [];
                 const roommateInputs = card.querySelectorAll('.roommate-reg');
                 roommateInputs.forEach(input => {
@@ -437,22 +467,28 @@
                     }
                 });
                 
+                // Collect room priorities
+                const roomPriorities = [];
+                const roomInputs = card.querySelectorAll('.room-priority-input');
+                roomInputs.forEach(input => {
+                    if (input.value.trim()) {
+                        roomPriorities.push(input.value.trim());
+                    }
+                });
+                
                 formData.preferences.push({
                     priority: index + 1,
                     block: card.querySelector('.pref-block').value,
-                    room: card.querySelector('.pref-room').value || null,
                     sharing: card.querySelector('.pref-sharing').value,
                     type: card.querySelector('.pref-type').value,
+                    roomPriorities: roomPriorities,
                     roommates: roommates,
                     backup: card.querySelector('.backup-checkbox').checked
                 });
             });
             
-            // Display collected data
             console.log('Form Data:', formData);
-            alert('Form submitted successfully!\n\nData logged to console (F12 to view)\n\nIn production, this would be sent to the server.');
             
-            // Download as JSON
             const dataStr = JSON.stringify(formData, null, 2);
             const dataBlob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(dataBlob);
@@ -460,6 +496,12 @@
             link.href = url;
             link.download = `preference_${formData.regNo}.json`;
             link.click();
+            
+            let totalRooms = formData.preferences.reduce((sum, pref) => sum + pref.roomPriorities.length, 0);
+            alert(`✅ Form submitted successfully!\n\n` +
+                  `JSON file downloaded: preference_${formData.regNo}.json\n\n` +
+                  `Block preferences: ${formData.preferences.length}\n` +
+                  `Total specific rooms listed: ${totalRooms}`);
         });
     </script>
 </body>
