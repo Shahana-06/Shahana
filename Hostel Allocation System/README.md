@@ -56,4 +56,4 @@ MIT License
 [Maha Srre Sveta] - [VIT University, Vellore]
 
 ## 📧 Contact
-For questions: [shahana.suresh2024@vitstudent.ac.in]
+For questions: [shahana.suresh2024@vitstudent.ac.in], [irman.kaur2024@vitstudent.ac.in], [visvanathan.kamali2024@vitstudent.ac.in], [maha.srresvetam2024@vitstudent.ac.in]
