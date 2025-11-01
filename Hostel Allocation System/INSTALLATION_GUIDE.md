@@ -28,20 +28,18 @@ Make sure you have the following installed:
 ## 📂 Step 2: Navigate to the Frontend Folder
 ```bash
 cd Desktop/hostel-allocation-system/frontend
-
----
-
-## 📂 Step 3: Install dependencies
-```bash
+📦 Step 3: Install Dependencies
+bash
+Copy code
 npm install
+⏳ This may take 2–3 minutes depending on your internet speed.
 
----
-
-## 📂 Step 4: Run the application
-```bash
+🚀 Step 4: Run the Application
+bash
+Copy code
 npm run dev
+🌐 Step 5: Open in Browser
+Once the development server starts, open your browser and visit:
 
----
+👉 http://localhost:3000
 
-## 📂 Step 5: Open in browser
-http://localhost:3000
