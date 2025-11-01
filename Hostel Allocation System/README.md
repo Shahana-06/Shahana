@@ -22,7 +22,7 @@ Open browser at: http://localhost:3000
 
 ### Student Form
 ```bash
-cd student-form
+cd student_form
 # Open index.html in your browser (double-click the file)
 ```
 
@@ -32,7 +32,6 @@ cd student-form
 - **Assignment Problem** - Student-room matching
 - **Game Theory** - Elasticity-based tie-breaking
 - **Linear Programming** - Weight calculations
-- **Constraint Satisfaction** - Hard constraints enforcement
 
 ## 📁 Project Structure
 ```
